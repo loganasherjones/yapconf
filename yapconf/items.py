@@ -24,11 +24,11 @@ def from_specification(specification, env_prefix=None, separator='.',
     return items
 
 
-def _get_item_choices(item_type, item_dict):
+def _get_item_cli_choices(item_type, item_dict):
     if item_type in ['list', 'dict']:
         return None
     else:
-        return item_dict.get('choices')
+        return item_dict.get('cli_choices')
 
 
 def _get_item_env_name(item_name, item_dict, item_type, env_prefix, use_env):
@@ -86,7 +86,7 @@ def generate_item(name, item_dict, env_prefix,
     else:
         init_args['prefix'] = None
 
-    init_args['choices'] = _get_item_choices(item_type, item_dict)
+    init_args['cli_choices'] = _get_item_cli_choices(item_type, item_dict)
     init_args['env_name'] = _get_item_env_name(item_name=name,
                                                item_dict=item_dict,
                                                item_type=item_type,
@@ -116,7 +116,7 @@ class YapconfItem(object):
     def __init__(self, name, item_type='str',
                  default=None, env_name=None,
                  description=None, required=True, cli_short_name=None,
-                 choices=None, previous_names=None, previous_defaults=None,
+                 cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
                  bootstrap=False):
 
@@ -127,7 +127,7 @@ class YapconfItem(object):
         self.description = description
         self.required = required
         self.cli_short_name = cli_short_name
-        self.choices = choices or []
+        self.cli_choices = cli_choices or []
         self.previous_names = previous_names or []
         self.previous_defaults = previous_defaults or []
         self.children = children or {}
@@ -295,7 +295,7 @@ class YapconfItem(object):
             return False
 
     def _get_argparse_choices(self):
-        return self.choices or None
+        return self.cli_choices or None
 
     def _get_argparse_names(self, prefix_chars):
         cli_prefix = self._format_prefix_for_cli(prefix_chars)
@@ -382,12 +382,12 @@ class YapconfBoolItem(YapconfItem):
     def __init__(self, name, item_type='bool',
                  default=None, env_name=None,
                  description=None, required=True, cli_short_name=None,
-                 choices=None, previous_names=None, previous_defaults=None,
+                 cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
                  bootstrap=False):
         super(YapconfBoolItem, self).__init__(
             name, item_type, default, env_name, description, required,
-            cli_short_name, choices, previous_names, previous_defaults,
+            cli_short_name, cli_choices, previous_names, previous_defaults,
             children, cli_expose, separator, prefix, bootstrap)
 
     def _get_argparse_action(self, parent_action=True):
@@ -471,13 +471,13 @@ class YapconfBoolItem(YapconfItem):
 class YapconfListItem(YapconfItem):
     def __init__(self, name, item_type='list', default=None, env_name=None,
                  description=None, required=True, cli_short_name=None,
-                 choices=None, previous_names=None, previous_defaults=None,
+                 cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
                  bootstrap=False):
 
         super(YapconfListItem, self).__init__(
             name, item_type, default, env_name, description, required,
-            cli_short_name, choices, previous_names, previous_defaults,
+            cli_short_name, cli_choices, previous_names, previous_defaults,
             children, cli_expose, separator, prefix, bootstrap)
 
         if len(self.children) != 1:
@@ -578,13 +578,13 @@ class YapconfDictItem(YapconfItem):
     def __init__(self, name, item_type='dict',
                  default=None, env_name=None,
                  description=None, required=True, cli_short_name=None,
-                 choices=None, previous_names=None, previous_defaults=None,
+                 cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
                  bootstrap=False):
 
         super(YapconfDictItem, self).__init__(
             name, item_type, default, env_name, description, required,
-            cli_short_name, choices, previous_names, previous_defaults,
+            cli_short_name, cli_choices, previous_names, previous_defaults,
             children, cli_expose, separator, prefix, bootstrap)
 
         if len(self.children) < 1:

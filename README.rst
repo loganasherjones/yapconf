@@ -44,7 +44,13 @@ Yapconf helps manage your python application's configuration
 Quick Start
 -----------
 
-A quick-start shows how easy it can be to use `yapconf`
+To install Yapconf, run this command in your terminal:
+
+.. code-block:: console
+
+    $ pip install yapconf
+
+Then you can use Yapconf yourself!
 
 .. code-block:: python
 

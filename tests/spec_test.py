@@ -31,7 +31,7 @@ def setup_function(function):
 
 def teardown_function(function):
     os.environ = original_env
-    yapconf.spec.yaml_support = original_yaml_flag
+    yapconf.yaml_support = original_yaml_flag
 
 
 @pytest.fixture
@@ -340,7 +340,7 @@ def test_load_config_invalid_override(basic_spec, override):
 
 
 def test_load_config_yaml_not_supported(basic_spec):
-    yapconf.spec.yaml_support = False
+    yapconf.yaml_support = False
     with pytest.raises(YapconfLoadError):
         basic_spec.load_config(('label', 'path/to/file', 'yaml'))
 

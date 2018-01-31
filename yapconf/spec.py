@@ -5,7 +5,8 @@ import six
 import os
 
 from box import Box
-from yapconf import FILE_TYPES, yaml, yaml_support
+
+import yapconf
 from yapconf.exceptions import YapconfSpecError, YapconfLoadError, \
     YapconfItemNotFound
 from yapconf.items import from_specification
@@ -18,10 +19,11 @@ class YapconfSpec(object):
         self._file_type = file_type
         self._encoding = encoding
 
-        if self._file_type not in FILE_TYPES:
+        if self._file_type not in yapconf.FILE_TYPES:
             raise YapconfSpecError('Unsupported file type: {0}.'
                                    'Supported file types are: {1}'
-                                   .format(self._file_type, FILE_TYPES))
+                                   .format(self._file_type,
+                                           yapconf.FILE_TYPES))
 
         self._specification = self._load_specification(specification)
         self._env_prefix = env_prefix
@@ -41,7 +43,7 @@ class YapconfSpec(object):
             raise YapconfSpecError('Specification must be a dictionary or a '
                                    'filename which contains a loadable '
                                    'dictionary. Supported file types are {0}'
-                                   .format(FILE_TYPES))
+                                   .format(yapconf.FILE_TYPES))
 
         self._validate_specification(specification)
         return specification
@@ -220,11 +222,11 @@ class YapconfSpec(object):
         self._logger.debug("Writing config: {0}".format(dictionary))
         self._logger.debug("To ({0}) file: {1}".format(file_type, filename))
 
-        if file_type == 'yaml' and not yaml_support:
+        if file_type == 'yaml' and not yapconf.yaml_support:
             raise YapconfLoadError('Cannot output a YAML file because the '
                                    'yaml module was not loaded. Please '
                                    'install either PyYaml or ruamel.yaml')
-        elif file_type not in FILE_TYPES:
+        elif file_type not in yapconf.FILE_TYPES:
             raise YapconfLoadError('Unsupported file type: {0}'
                                    .format(file_type))
 
@@ -232,24 +234,24 @@ class YapconfSpec(object):
             if file_type == 'json':
                 json.dump(dictionary, conf_file, sort_keys=True, indent=4)
             elif file_type == 'yaml':
-                yaml.dump(dictionary, conf_file)
+                yapconf.yaml.dump(dictionary, conf_file)
 
     def _load_file_to_dict(self, filename, file_type, exc_clazz):
         # Loads file, validates that the file, after loading is a dict
         data = None
 
-        if file_type == 'yaml' and not yaml_support:
+        if file_type == 'yaml' and not yapconf.yaml_support:
             raise exc_clazz('You wanted to load a YAML file but '
                             'the yaml module was not loaded. Please '
                             'install either PyYaml or ruamel.yaml')
-        elif file_type not in FILE_TYPES:
+        elif file_type not in yapconf.FILE_TYPES:
             raise exc_clazz('Unsupported file type: {0}'.format(file_type))
 
         with open(filename, encoding=self._encoding) as conf_file:
             if file_type == 'json':
                 data = json.load(conf_file)
             elif file_type == 'yaml':
-                data = yaml.load(conf_file.read())
+                data = yapconf.yaml.load(conf_file.read())
 
         if not isinstance(data, dict):
             raise exc_clazz("File: {0} when parsed did not result "

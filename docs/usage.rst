@@ -105,9 +105,10 @@ be specified as follows:
 
 Environment Loading
 -------------------
-If no ``env_name`` is specified for each item, then by default, Yapconf will look for the item name in all upper-case
+
+If no ``env_name`` is specified for each item, then by default, Yapconf will look for the item name in all upper case
 letters in the environment. Loading ``list`` items and ``dict`` items from the environment is not supported and as
-such ``env_name``s that are set for these items will be ignored.
+such ``env_name`` s that are set for these items will be ignored.
 
 Often times, you will want to prefix environment variables with your application name or something else. You can
 set an environment prefix on the ``YapconfSpec`` item via the ``env_prefix``:

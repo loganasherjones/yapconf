@@ -16,11 +16,25 @@ TYPES = ('str', 'int', 'long', 'float', 'bool', 'complex', 'dict', 'list', )
 
 def from_specification(specification, env_prefix=None, separator='.',
                        use_env=True, parent_names=None):
+    """Used to create YapconfItems from a specification dictionary.
+
+    Args:
+        specification (dict): The specification used to
+            initialize ``YapconfSpec``
+        env_prefix (str): Prefix to add to environment names
+        separator (str): Separator for nested items
+        use_env (bool): Flag to use or not use environment variables
+        parent_names (list): Parents names of any given item
+
+    Returns:
+        A dictionary of names to YapconfItems
+
+    """
     items = {}
     for item_name, item_info in six.iteritems(specification):
         names = parent_names or []
-        items[item_name] = generate_item(item_name, item_info, env_prefix,
-                                         separator, use_env, names)
+        items[item_name] = _generate_item(item_name, item_info, env_prefix,
+                                          separator, use_env, names)
     return items
 
 
@@ -66,8 +80,8 @@ def _get_item_children(item_name, item_dict, item_type, env_prefix,
         return None
 
 
-def generate_item(name, item_dict, env_prefix,
-                  separator, use_env, parent_names):
+def _generate_item(name, item_dict, env_prefix,
+                   separator, use_env, parent_names):
     init_args = {'name': name, 'separator': separator}
 
     item_type = item_dict.get('type', 'str')
@@ -112,6 +126,45 @@ def generate_item(name, item_dict, env_prefix,
 
 
 class YapconfItem(object):
+    """A simple configuration item for interacting with configurations.
+
+    A ``YapconfItem`` represent the following types: (``str``, ``int``,
+    ``long``, ``float``, ``complex``). It also acts as the base class
+    for the other ``YapconfItem`` types. It provides several basic
+    functions. It helps create CLI arguments to be used by
+    ``argparse.ArgumentParser``. It also makes getting a particular
+    configuration value simple.
+
+    In general this class is expected to be used by the ``YapconfSpec``
+    class to help manage your configuration.
+
+    Attributes:
+         name (str): The name of the config value.
+         item_type (str): The type of config value you are expecting.
+         default: The default value if no configuration value can be found.
+         env_name: The name to search in the environment.
+         description: The description of your configuration item.
+         required: Whether or not the item is required to be present.
+         cli_short_name: A short name (1-character) to identify your item
+            on the command-line.
+         cli_choices: A list of possible choices on the command-line.
+         previous_names: A list of names that used to identify this item. This
+            is useful for config migrations.
+         previous_defaults: A list of previous default values given to this
+            item. Again, useful for config migrations.
+         children: Any children of this item. Not used by this base class.
+         cli_expose: A flag to indicate if the item should be exposed from
+            the command-line. It is possible for this value to be overwritten
+            based on whether or not this item is part of a nested list.
+         separator: A separator used to split apart parent names in the prefix.
+         prefix: A delimited list of parent names
+         bootstrap: A flag to detrmine if this item is required for
+            bootstrapping the rest of your configuration.
+
+    Raises:
+        YapconfItemError: If any of the information given during
+            initialization results in an invalid item.
+    """
 
     def __init__(self, name, item_type='str',
                  default=None, env_name=None,
@@ -142,7 +195,7 @@ class YapconfItem(object):
             self.fq_name = self.name
 
         self.possible_names = [self.fq_name] + self.previous_names
-        self.cli_support = self.has_cli_support()
+        self.cli_support = self._has_cli_support()
         self.logger = logging.getLogger(__name__)
 
         if not self.cli_support and self.cli_expose:
@@ -151,6 +204,124 @@ class YapconfItem(object):
             self.cli_expose = False
 
         self._validate()
+
+    def update_default(self, new_default, respect_none=False):
+        """Update our current default with the new_default.
+
+        Args:
+            new_default: New default to set.
+            respect_none: Flag to determine if ``None`` is a valid value.
+
+        """
+        if new_default is not None:
+            self.default = new_default
+        elif new_default is None and respect_none:
+            self.default = None
+
+    def migrate_config(self, current_config, config_to_migrate,
+                       always_update, update_defaults):
+        """Migrate config value in current_config, updating config_to_migrate.
+
+        Given the current_config object, it will attempt to find a value
+        based on all the names given. If no name could be found, then it
+        will simply set the value to the default.
+
+        If a value is found and is in the list of previous_defaults, it will
+        either update or keep the old value based on if update_defaults is
+        set.
+
+        If a non-default value is set it will either keep this value or update
+        it based on if ``always_update`` is true.
+
+        Args:
+            current_config (dict): Current configuration.
+            config_to_migrate (dict): Config to update.
+            always_update (bool): Always update value.
+            update_defaults (bool): Update values found in previous_defaults
+        """
+        value = self._search_config_for_possible_names(current_config)
+        self._update_config(config_to_migrate, value,
+                            always_update, update_defaults)
+
+    def add_argument(self, parser, bootstrap=False):
+        """Add this item as an argument to the given parser.
+
+        Args:
+            parser (argparse.ArgumentParser): The parser to add this item to.
+            bootstrap: Flag to indicate whether you only want to mark this
+                item as required or not
+        """
+        if self.cli_expose:
+            args = self._get_argparse_names(parser.prefix_chars)
+            kwargs = self._get_argparse_kwargs(bootstrap)
+            parser.add_argument(*args, **kwargs)
+
+    def get_config_value(self, overrides):
+        """Get the configuration value from all overrides.
+
+        Iterates over all overrides given to see if a value can be pulled
+        out from them. It will convert each of these values to ensure they
+        are the correct type.
+
+        Args:
+            overrides: A list of tuples where each tuple is a label and a
+                dictionary representing a configuration.
+
+        Returns:
+            The converted configuration value.
+
+        Raises:
+            YapconfItemNotFound: If an item is required but could not be found
+                in the configuration.
+            YapconfItemError: If a possible value was found but the type
+                cannot be determined.
+            YapconfValueError: If a possible value is found but during
+                conversion, an exception was raised.
+
+        """
+        label, override = self._find_label_and_override(overrides)
+
+        if override is None and self.default is None and self.required:
+            raise YapconfItemNotFound('Could not find config value for {0}'
+                                      .format(self.name))
+
+        if override is None:
+            self.logger.info('Config value not found for {0}, falling back '
+                             'to default.'.format(self.name))
+            value = self.default
+        elif label == 'ENVIRONMENT':
+            value = override[self.env_name]
+        else:
+            value = override[self.name]
+
+        if value is None:
+            return value
+
+        return self.convert_config_value(value, label)
+
+    def convert_config_value(self, value, label):
+        try:
+            if self.item_type == 'str':
+                return str(value)
+            elif self.item_type == 'int':
+                return int(value)
+            elif self.item_type == 'long':
+                return long(value)
+            elif self.item_type == 'float':
+                return float(value)
+            elif self.item_type == 'complex':
+                return complex(value)
+            else:
+                raise YapconfItemError("Do not know how to convert type {0} "
+                                       "for {1} found in {2}"
+                                       .format(self.item_type, self.name,
+                                               label))
+        except (TypeError, ValueError) as ex:
+            raise YapconfValueError("Tried to convert {0} to {1} but got an "
+                                    "error instead. Found in {2}. Error "
+                                    "Message: {3}"
+                                    .format(self.name, self.item_type, label,
+                                            ex), ex)
 
     def _validate(self):
         if self.separator in self.name:
@@ -169,6 +340,12 @@ class YapconfItem(object):
                                    "character.".format(self.cli_short_name))
         elif self.cli_short_name == '-':
             raise YapconfItemError("CLI Short name cannot be '-'")
+
+    def _has_cli_support(self, child_of_list=False):
+        for child in self.children.values():
+            if not child._has_cli_support(child_of_list):
+                return False
+        return True
 
     def _find_label_and_override(self, overrides, skip_environment=False):
         for label, info in overrides:
@@ -201,18 +378,6 @@ class YapconfItem(object):
         else:
             return expected_prefix + chars.join(
                 self.prefix.split(self.separator)) + expected_suffix
-
-    def update_default(self, new_default, respect_none=False):
-        if new_default is not None:
-            self.default = new_default
-        elif new_default is None and respect_none:
-            self.default = None
-
-    def has_cli_support(self, child_of_list=False):
-        for child in self.children.values():
-            if not child.has_cli_support(child_of_list):
-                return False
-        return True
 
     def _search_config_for_fq_name(self, fq_name, config_to_search):
         names = fq_name.split(self.separator)
@@ -258,12 +423,6 @@ class YapconfItem(object):
             self.logger.debug("Key {0} was found, not changing value from {1}"
                               .format(self.name, value))
             config[self.name] = value
-
-    def migrate_config(self, current_config, config_to_migrate,
-                       always_update, update_defaults):
-        value = self._search_config_for_possible_names(current_config)
-        self._update_config(config_to_migrate, value,
-                            always_update, update_defaults)
 
     def _get_argparse_action(self, parent_action=True):
         if self.prefix and parent_action:
@@ -322,61 +481,14 @@ class YapconfItem(object):
 
         return kwargs
 
-    def add_argument(self, parser, bootstrap=False):
-        if self.cli_expose:
-            args = self._get_argparse_names(parser.prefix_chars)
-            kwargs = self._get_argparse_kwargs(bootstrap)
-            parser.add_argument(*args, **kwargs)
-
-    def get_config_value(self, overrides):
-        label, override = self._find_label_and_override(overrides)
-
-        if override is None and self.default is None and self.required:
-            raise YapconfItemNotFound('Could not find config value for {0}'
-                                      .format(self.name))
-
-        if override is None:
-            self.logger.info('Config value not found for {0}, falling back '
-                             'to default.'.format(self.name))
-            value = self.default
-        elif label == 'ENVIRONMENT':
-            value = override[self.env_name]
-        else:
-            value = override[self.name]
-
-        if value is None:
-            return value
-
-        return self.convert_config_value(value, label)
-
-    def convert_config_value(self, value, label):
-        try:
-            if self.item_type == 'str':
-                return str(value)
-            elif self.item_type == 'int':
-                return int(value)
-            elif self.item_type == 'long':
-                return long(value)
-            elif self.item_type == 'float':
-                return float(value)
-            elif self.item_type == 'complex':
-                return complex(value)
-            else:
-                raise YapconfItemError("Do not know how to convert type {0} "
-                                       "for {1} found in {2}"
-                                       .format(self.item_type, self.name,
-                                               label))
-        except (TypeError, ValueError) as ex:
-            raise YapconfValueError("Tried to convert {0} to {1} but got an "
-                                    "error instead. Found in {2}. Error "
-                                    "Message: {3}"
-                                    .format(self.name, self.item_type, label,
-                                            ex), ex)
-
 
 class YapconfBoolItem(YapconfItem):
+    """A YapconfItem specifically for Boolean behavior"""
 
+    # Values to interpret as True (not case sensitive)
     TRUTHY_VALUES = ('y', 'yes', 't', 'true', '1', 1, True, )
+
+    # Values to interpret as False (not case sensitive)
     FALSY_VALUES = ('n', 'no', 'f', 'false', '0', 0, False, )
 
     def __init__(self, name, item_type='bool',
@@ -389,6 +501,60 @@ class YapconfBoolItem(YapconfItem):
             name, item_type, default, env_name, description, required,
             cli_short_name, cli_choices, previous_names, previous_defaults,
             children, cli_expose, separator, prefix, bootstrap)
+
+    def add_argument(self, parser, bootstrap=False):
+        """Add boolean item as an argument to the given parser.
+
+        An exclusive group is created on the parser, which will add
+        a boolean-style command line argument to the parser.
+
+        Examples:
+            A non-nested boolean value with the name 'debug' will result
+            in a command-line argument like the following:
+
+            '--debug/--no-debug'
+
+        Args:
+            parser (argparse.ArgumentParser): The parser to add this item to.
+            bootstrap (bool): Flag to indicate whether you only want to mark
+                this item as required or not.
+        """
+        tmp_default = self.default
+        exclusive_grp = parser.add_mutually_exclusive_group()
+        self.default = True
+        args = self._get_argparse_names(parser.prefix_chars)
+        kwargs = self._get_argparse_kwargs(bootstrap)
+        exclusive_grp.add_argument(*args, **kwargs)
+
+        self.default = False
+        args = self._get_argparse_names(parser.prefix_chars)
+        kwargs = self._get_argparse_kwargs(bootstrap)
+        exclusive_grp.add_argument(*args, **kwargs)
+
+        self.default = tmp_default
+
+    def convert_config_value(self, value, label):
+        """Converts all 'Truthy' values to True and 'Falsy' values to False.
+
+        Args:
+            value: Value to convert
+            label: Label of the config which this item was found.
+
+        Returns:
+
+        """
+        if isinstance(value, six.string_types):
+            value = value.lower()
+
+        if value in self.TRUTHY_VALUES:
+            return True
+        elif value in self.FALSY_VALUES:
+            return False
+        else:
+            raise YapconfValueError("Cowardly refusing to interpret "
+                                    "config value as a boolean. Name: "
+                                    "{0}, Value: {1}"
+                                    .format(self.name, value))
 
     def _get_argparse_action(self, parent_action=True):
 
@@ -430,45 +596,10 @@ class YapconfBoolItem(YapconfItem):
 
         return kwargs
 
-    def add_argument(self, parser, bootstrap=False):
-        # If we do not have a default we need to add the positive
-        # and negative flags so that the user can specify either.
-        # so we simply change the default and add the arguments to
-        # an exclusive group. We can't just call add_argument again
-        # because we need to add them to the exclusive group not
-        # the parser.
-        if self.default is None and self.cli_expose:
-            exclusive_grp = parser.add_mutually_exclusive_group()
-            self.default = True
-            args = self._get_argparse_names(parser.prefix_chars)
-            kwargs = self._get_argparse_kwargs(bootstrap)
-            exclusive_grp.add_argument(*args, **kwargs)
-
-            self.default = False
-            args = self._get_argparse_names(parser.prefix_chars)
-            kwargs = self._get_argparse_kwargs(bootstrap)
-            exclusive_grp.add_argument(*args, **kwargs)
-
-            self.default = None
-        elif self.cli_expose:
-            super(YapconfBoolItem, self).add_argument(parser, bootstrap)
-
-    def convert_config_value(self, value, label):
-        if isinstance(value, six.string_types):
-            value = value.lower()
-
-        if value in self.TRUTHY_VALUES:
-            return True
-        elif value in self.FALSY_VALUES:
-            return False
-        else:
-            raise YapconfValueError("Cowardly refusing to interpret "
-                                    "config value as a boolean. Name: "
-                                    "{0}, Value: {1}"
-                                    .format(self.name, value))
-
 
 class YapconfListItem(YapconfItem):
+    """A YapconfItem for capture list-specific behavior"""
+
     def __init__(self, name, item_type='list', default=None, env_name=None,
                  description=None, required=True, cli_short_name=None,
                  cli_choices=None, previous_names=None, previous_defaults=None,
@@ -522,11 +653,48 @@ class YapconfListItem(YapconfItem):
                                     'Invalid item found in {1}'
                                     .format(self.name, label), ex)
 
-    def has_cli_support(self, child_of_list=False):
+    def add_argument(self, parser, bootstrap=False):
+        """Add list-style item as an argument to the given parser.
+
+        Generally speaking, this works mostly like the normal append
+        action, but there are special rules for boolean cases. See the
+        AppendReplace action for more details.
+
+        Examples:
+            A non-nested list value with the name 'values' and a child name of
+            'value' will result in a command-line argument that will correctly
+            handle arguments like the following:
+
+            ['--value', 'VALUE1', '--value', 'VALUE2']
+
+        Args:
+            parser (argparse.ArgumentParser): The parser to add this item to.
+            bootstrap (bool): Flag to indicate whether you only want to mark
+                this item as required or not.
+        """
+        if self.cli_expose:
+            if isinstance(self.child, YapconfBoolItem):
+                original_default = self.child.default
+
+                self.child.default = True
+                args = self.child._get_argparse_names(parser.prefix_chars)
+                kwargs = self._get_argparse_kwargs(bootstrap)
+                parser.add_argument(*args, **kwargs)
+
+                self.child.default = False
+                args = self.child._get_argparse_names(parser.prefix_chars)
+                kwargs = self._get_argparse_kwargs(bootstrap)
+                parser.add_argument(*args, **kwargs)
+
+                self.child.default = original_default
+            else:
+                super(YapconfListItem, self).add_argument(parser, bootstrap)
+
+    def _has_cli_support(self, child_of_list=False):
         if child_of_list:
             return False
         else:
-            return super(YapconfListItem, self).has_cli_support(True)
+            return super(YapconfListItem, self)._has_cli_support(True)
 
     def _get_argparse_action(self, parent_action=True):
         if self.prefix and parent_action:
@@ -554,27 +722,10 @@ class YapconfListItem(YapconfItem):
 
         return child_kwargs
 
-    def add_argument(self, parser, bootstrap=False):
-        if self.cli_expose:
-            if isinstance(self.child, YapconfBoolItem):
-                original_default = self.child.default
-
-                self.child.default = True
-                args = self.child._get_argparse_names(parser.prefix_chars)
-                kwargs = self._get_argparse_kwargs(bootstrap)
-                parser.add_argument(*args, **kwargs)
-
-                self.child.default = False
-                args = self.child._get_argparse_names(parser.prefix_chars)
-                kwargs = self._get_argparse_kwargs(bootstrap)
-                parser.add_argument(*args, **kwargs)
-
-                self.child.default = original_default
-            else:
-                super(YapconfListItem, self).add_argument(parser, bootstrap)
-
 
 class YapconfDictItem(YapconfItem):
+    """A YapconfItem for capture dict-specific behavior"""
+
     def __init__(self, name, item_type='dict',
                  default=None, env_name=None,
                  description=None, required=True, cli_short_name=None,
@@ -591,13 +742,25 @@ class YapconfDictItem(YapconfItem):
             raise YapconfDictItemError('Dict item {0} must have children'
                                        .format(self.name))
 
-    def has_cli_support(self, child_of_list=False):
-        if child_of_list:
-            return False
-        else:
-            return super(YapconfDictItem, self).has_cli_support()
-
     def add_argument(self, parser, bootstrap=False):
+        """Add dict-style item as an argument to the given parser.
+
+        The dict item will take all the nested items in the dictionary and
+        namespace them with the dict name, adding each child item as
+        their own CLI argument.
+
+        Examples:
+            A non-nested dict item with the name 'db' and children named
+            'port' and 'host' will result in the following being valid
+            CLI args:
+
+            ['--db-host', 'localhost', '--db-port', '1234']
+
+        Args:
+            parser (argparse.ArgumentParser): The parser to add this item to.
+            bootstrap (bool): Flag to indicate whether you only want to mark
+                this item as required or not.
+        """
         if self.cli_expose:
             for child in self.children.values():
                 child.add_argument(parser, bootstrap)
@@ -627,6 +790,12 @@ class YapconfDictItem(YapconfItem):
             child_name: child_item.get_config_value([(label, value)])
             for child_name, child_item in six.iteritems(self.children)
         }
+
+    def _has_cli_support(self, child_of_list=False):
+        if child_of_list:
+            return False
+        else:
+            return super(YapconfDictItem, self)._has_cli_support()
 
     def _find_all_overrides(self, overrides):
         nested_overrides = []

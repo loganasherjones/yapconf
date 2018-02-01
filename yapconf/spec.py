@@ -13,6 +13,31 @@ from yapconf.items import from_specification
 
 
 class YapconfSpec(object):
+    """Object which holds your configuration's specification.
+
+    The YapconfSpec item is the main interface into the yapconf package.
+    It will help you load, migrate, update and add arguments for your
+    application.
+
+    Examples:
+        >>> from yapconf import YapconfSpec
+
+        First define a specification
+
+        >>> my_spec = YapconfSpec(
+        ... {"foo": {"type": "str", "default": "bar"}},
+        ... env_prefix='MY_APP_')
+
+        Then load the configuration in whatever order you want!
+        load_config will automatically look for the 'foo' value in
+        '/path/to/config.yml', then the environment, finally
+        falling back to the default if it was not found elsewhere
+
+        >>> config = my_spec.load_config('/path/to/config.yml', 'ENVIRONMENT')
+        >>> print(config.foo)
+        >>> print(config['foo'])
+
+    """
 
     def __init__(self, specification, file_type='json', env_prefix=None,
                  encoding='utf-8', separator='.'):
@@ -72,20 +97,48 @@ class YapconfSpec(object):
 
     @property
     def defaults(self):
+        """dict: All defaults for items in the specification."""
         return {item.name: item.default
                 for item in self._yapconf_items.values()}
 
     def add_arguments(self, parser, bootstrap=False):
+        """Adds all items to the parser passed in.
+
+        Args:
+            parser (argparse.ArgumentParser): The parser to add all items to.
+            bootstrap (bool): Flag to indicate whether you only want to mark
+                bootstrapped items as required on the command-line.
+
+        """
         [item.add_argument(parser, bootstrap)
          for item in self._get_items(bootstrap=False)]
 
     def get_item(self, name, bootstrap=False):
+        """Get a particular item in the specification.
+
+        Args:
+            name (str): The name of the item to retrieve.
+            bootstrap (bool): Only search bootstrap items
+
+        Returns (YapconfItem):
+            A YapconfItem if it is found, None otherwise.
+
+        """
         for item in self._get_items(bootstrap):
             if item.name == name:
                 return item
         return None
 
     def update_defaults(self, new_defaults, respect_none=False):
+        """Update items defaults to the values in the new_defaults dict.
+
+        Args:
+            new_defaults (dict): A key-value pair of new defaults to be
+                applied.
+            respect_none (bool): Flag to indicate if ``None`` values should
+                constitute an update to the default.
+
+        """
         for key, value in six.iteritems(new_defaults):
             item = self.get_item(key)
             if item is None:
@@ -96,6 +149,54 @@ class YapconfSpec(object):
             item.update_default(value, respect_none)
 
     def load_config(self, *args, **kwargs):
+        """Load a config based on the arguments passed in.
+
+        The order of arguments passed in as \*args is significant. It indicates
+        the order of precedence used to load configuration values. Each
+        argument can be a string, dictionary or a tuple. There is a special
+        case string called 'ENVIRONMENT', otherwise it will attempt to load the
+        filename passed in as a string.
+
+        By default, if a string is provided, it will attempt to load the
+        file based on the file_type passed in on initialization. If you
+        want to load a mixture of json and yaml files, you can specify them
+        as the 3rd part of a tuple.
+
+        Examples:
+            You can load configurations in any of the following ways:
+
+            >>> my_spec = YapconfSpec({'foo': {'type': 'str'}})
+            >>> my_spec.load_config('/path/to/file')
+            >>> my_spec.load_config({'foo': 'bar'})
+            >>> my_spec.load_config('ENVIRONMENT')
+            >>> my_spec.load_config(('label', {'foo': 'bar'}))
+            >>> my_spec.load_config(('label', '/path/to/file.yaml', 'yaml'))
+            >>> my_spec.load_config(('label', '/path/to/file.json', 'json'))
+
+            You can of course combine each of these and the order will be
+            held correctly.
+
+        Args:
+            *args:
+            **kwargs: The only supported keyword argument is 'bootstrap'
+                which will indicate that only bootstrap configurations
+                should be loaded.
+
+        Returns:
+            box.Box: A Box object which is subclassed from dict. It should
+                behave exactly as a dictionary. This object is guaranteed to
+                contain at least all of your required configuration items.
+
+        Raises:
+            YapconfLoadError: If we attempt to load your args and something
+                goes wrong.
+            YapconfItemNotFound: If an item is required but could not be found
+                in the configuration.
+            YapconfItemError: If a possible value was found but the type
+                cannot be determined.
+            YapconfValueError: If a possible value is found but during
+                conversion, an exception was raised.
+        """
         bootstrap = kwargs.get('bootstrap', False)
         overrides = self._generate_overrides(*args)
         config = self._generate_config_from_overrides(overrides, bootstrap)
@@ -108,6 +209,50 @@ class YapconfSpec(object):
                             output_file_type=None,
                             create=True,
                             update_defaults=True):
+        """Migrates a configuration file.
+
+        This is used to help you update your configurations throughout the
+        lifetime of your application. It is probably best explained through
+        example.
+
+        Examples:
+            Assume we have a JSON config file ('/path/to/config.json')
+            like the following:
+            ``{"db_name": "test_db_name", "db_host": "1.2.3.4"}``
+
+            >>> spec = YapconfSpec({
+            ...    'db_name': {
+            ...        'type': 'str',
+            ...        'default': 'new_default',
+            ...        'previous_defaults': ['test_db_name']
+            ...    },
+            ...    'db_host': {
+            ...        'type': 'str',
+            ...        'previous_defaults': ['localhost']
+            ...    }
+            ... })
+
+            We can migrate that file quite easily with the spec object:
+
+            >>> spec.migrate_config_file('/path/to/config.json')
+
+            Will result in /path/to/config.json being overwritten:
+            ``{"db_name": "new_default", "db_host": "1.2.3.4"}``
+
+        Args:
+            config_file_path (str): The path to your current config
+            always_update (bool): Always update values (even to None)
+            current_file_type (str): Defaults to self._file_type
+            output_file_name (str): Defaults to the current_file_path
+            output_file_type (str): Defaults to self._file_type
+            create (bool): Create the file if it doesn't exist (otherwise
+                error if the file does not exist).
+            update_defaults (bool): Update values that have a value set to
+                something listed in the previous_defaults
+
+        Returns:
+            box.Box: The newly migrated configuration.
+        """
 
         current_file_type = current_file_type or self._file_type
         output_file_type = output_file_type or self._file_type
@@ -139,13 +284,6 @@ class YapconfSpec(object):
         else:
             return self._load_file_to_dict(config_file_path,
                                            file_type, YapconfLoadError)
-
-    @staticmethod
-    def _get_key_if_exists(config_dict, item):
-        for name in item.possible_names:
-            if name in config_dict:
-                return name
-        return None
 
     def _get_items(self, bootstrap):
         if not bootstrap:

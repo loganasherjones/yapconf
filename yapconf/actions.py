@@ -3,6 +3,8 @@ import argparse
 
 
 class AppendReplace(argparse.Action):
+    """argparse.Action used for appending values on the command-line"""
+
     def __call__(self, parser, namespace, values, option_string=None):
         # if we find an attribute and it is equal to the default,
         # then we need to completely replace the value
@@ -15,6 +17,7 @@ class AppendReplace(argparse.Action):
 
 
 class AppendBoolean(argparse.Action):
+    """Action used for appending boolean values on the command-line"""
 
     def __init__(self,
                  option_strings,
@@ -46,6 +49,21 @@ class AppendBoolean(argparse.Action):
 
 
 class MergeAction(argparse.Action):
+    """Merges command-line values into a single dictionary based on separator.
+
+    Each MergeAction has a child_action that indicates what should happen
+    for each value. It uses the separator to determine the eventual
+    location for each of its values.
+
+    The dest is split up by separator and each string is in turn used to
+    determine the key that should be used to store this value in the
+    dictionary that will get created.
+
+    Attributes:
+        child_action: The action that determines which value is stored
+        child_const: For booleans, this is the value used
+        separator: A separator to split up keys in the dictionary
+    """
 
     def __init__(self,
                  option_strings,

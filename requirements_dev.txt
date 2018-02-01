@@ -11,7 +11,7 @@ pytest==3.4.0
 pytest-runner==3.0
 pytest-cov==2.5.1
 pluggy<0.7,>=0.5
-codecov==2.0.10
+codecov==2.0.15
 coverage>=3.7.1
 mock==2.0.0
 six==1.11.0

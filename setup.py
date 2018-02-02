@@ -31,7 +31,7 @@ test_requirements = [
 
 setup(
     name='yapconf',
-    version='0.0.1',
+    version='0.1.0',
     description="Yet Another Python Configuration",
     long_description=readme + '\n\n' + history,
     author="Logan Asher Jones",
@@ -44,7 +44,7 @@ setup(
     zip_safe=False,
     keywords='yapconf',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',

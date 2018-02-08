@@ -256,7 +256,7 @@ class YapconfItem(object):
             kwargs = self._get_argparse_kwargs(bootstrap)
             parser.add_argument(*args, **kwargs)
 
-    def get_config_value(self, overrides):
+    def get_config_value(self, overrides, respect_none=False):
         """Get the configuration value from all overrides.
 
         Iterates over all overrides given to see if a value can be pulled
@@ -347,10 +347,16 @@ class YapconfItem(object):
                 return False
         return True
 
+    def _in_environment(self, env_dict):
+        return (
+            self.env_name and self.env_name in env_dict and
+            env_dict[self.env_name] is not None and env_dict[self.env_name] != ''
+        )
+
     def _find_label_and_override(self, overrides, skip_environment=False):
         for label, info in overrides:
             if label == 'ENVIRONMENT':
-                if self.env_name and self.env_name in info:
+                if self._in_environment(info):
                     if skip_environment:
                         self.logger.info('Found possible value in the '
                                          'environment for {0}, but for {1} '
@@ -362,7 +368,7 @@ class YapconfItem(object):
                         self.logger.info('Found config value for {0} in {1}'
                                          .format(self.name, label))
                         return label, info
-            elif self.name in info:
+            elif self.name in info and info[self.name] is not None:
                 self.logger.info('Found config value for {0} in {1}'
                                  .format(self.name, label))
                 return label, info

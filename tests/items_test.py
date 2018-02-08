@@ -135,9 +135,13 @@ def test_get_config_value_not_required(simple_item):
     assert simple_item.get_config_value({}) is None
 
 
-def test_get_config_value_from_default(simple_item):
-    simple_item.default = 'default'
-    assert simple_item.get_config_value({}) == 'default'
+@pytest.mark.parametrize('default,config,expected', [
+    ('default', [('dict1', {})], 'default'),
+    ('default', [('dict1', {'foo': None})], 'default')
+])
+def test_get_config_value_from_default(simple_item, default, config, expected):
+    simple_item.default = default
+    assert simple_item.get_config_value(config) == expected
 
 
 def test_get_config_value_from_override(simple_item):
@@ -192,16 +196,17 @@ def test_convert_config_value_invalid_bool(bool_item):
         bool_item.convert_config_value('INVALID_VALUE', 'label')
 
 
-def test_get_config_value_from_environment(simple_item):
-    simple_item.env_name = 'FOO'
-    value = simple_item.get_config_value([
-        ('ENVIRONMENT',
-         {
-             'FOO': 'foo_value',
-             'foo': 'should not be this'
-         }
-         )])
-    assert value == 'foo_value'
+@pytest.mark.parametrize('env_name,default,config,expected', [
+    ('FOO', None, {'FOO': 'foo_value', 'foo': 'should not be this'}, 'foo_value'),
+    ('FOO', 'default', {'FOO': 'foo_value', 'foo': 'should not be this'}, 'foo_value'),
+    ('FOO', 'default', {'FOO': None}, 'default'),
+    ('FOO', 'default', {'FOO': ''}, 'default'),
+])
+def test_get_config_value_from_environment(simple_item, env_name, default, config, expected):
+    simple_item.env_name = env_name
+    simple_item.default = default
+    value = simple_item.get_config_value([('ENVIRONMENT', config)])
+    assert value == expected
 
 
 def test_get_config_value_for_list(list_item):

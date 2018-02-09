@@ -349,8 +349,10 @@ class YapconfItem(object):
 
     def _in_environment(self, env_dict):
         return (
-            self.env_name and self.env_name in env_dict and
-            env_dict[self.env_name] is not None and env_dict[self.env_name] != ''
+            self.env_name and
+            self.env_name in env_dict and
+            env_dict[self.env_name] is not None and
+            env_dict[self.env_name] != ''
         )
 
     def _find_label_and_override(self, overrides, skip_environment=False):

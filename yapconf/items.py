@@ -4,6 +4,7 @@ import sys
 
 import six
 
+import yapconf
 from yapconf.actions import MergeAction, AppendBoolean, AppendReplace
 from yapconf.exceptions import YapconfItemError, YapconfItemNotFound, \
     YapconfValueError, YapconfListItemError, YapconfDictItemError
@@ -466,11 +467,12 @@ class YapconfItem(object):
 
     def _get_argparse_names(self, prefix_chars):
         cli_prefix = self._format_prefix_for_cli(prefix_chars)
+        cli_name = yapconf.change_case(self.name, prefix_chars)
         if self.cli_short_name:
-            return ["{0}{1}".format(cli_prefix, self.name),
+            return ["{0}{1}".format(cli_prefix, cli_name),
                     "{0}{1}".format(prefix_chars, self.cli_short_name)]
         else:
-            return ["{0}{1}".format(cli_prefix, self.name)]
+            return ["{0}{1}".format(cli_prefix, cli_name)]
 
     def _get_argparse_kwargs(self, bootstrap):
         kwargs = {
@@ -575,12 +577,13 @@ class YapconfBoolItem(YapconfItem):
 
     def _get_argparse_names(self, prefix_chars):
         cli_prefix = self._format_prefix_for_cli(prefix_chars)
+        cli_name = yapconf.change_case(self.name, prefix_chars)
         if self.default:
             full_name = "{0}no{1}{2}".format(cli_prefix,
                                              prefix_chars,
-                                             self.name)
+                                             cli_name)
         else:
-            full_name = "{0}{1}".format(cli_prefix, self.name)
+            full_name = "{0}{1}".format(cli_prefix, cli_name)
 
         if self.cli_short_name:
             return [full_name, "{0}{1}".format(prefix_chars,

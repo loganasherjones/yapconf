@@ -312,10 +312,10 @@ def test_add_argument(simple_item, type, required,
 
 
 @pytest.mark.parametrize('default,args,expected', [
-    (True, ['--no-my_bool'], False),
-    (False, ['--my_bool'], True),
-    (None, ['--my_bool'], True),
-    (None, ['--no-my_bool'], False),
+    (True, ['--no-my-bool'], False),
+    (False, ['--my-bool'], True),
+    (None, ['--my-bool'], True),
+    (None, ['--no-my-bool'], False),
     (True, [], None),
     (False, [], None),
 ])
@@ -328,12 +328,12 @@ def test_add_bool_argument(bool_item, default, args, expected):
 
 
 @pytest.mark.parametrize('list_default,child_default,args,expected', [
-    (None, True, ['--my_bool', '--no-my_bool'], [True, False]),
-    (None, False, ['--no-my_bool', '--my_bool'], [False, True]),
+    (None, True, ['--my-bool', '--no-my-bool'], [True, False]),
+    (None, False, ['--no-my-bool', '--my-bool'], [False, True]),
     ([True, False], False, [], None),
     ([True, False], None, [], None),
-    ([True, False], None, ['--my_bool'], [True]),
-    ([True, False], None, ['--no-my_bool'], [False]),
+    ([True, False], None, ['--my-bool'], [True]),
+    ([True, False], None, ['--no-my-bool'], [False]),
 ])
 def test_add_list_boolean_arguments(bool_list_item,
                                     list_default,

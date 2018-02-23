@@ -257,7 +257,7 @@ class YapconfItem(object):
             kwargs = self._get_argparse_kwargs(bootstrap)
             parser.add_argument(*args, **kwargs)
 
-    def get_config_value(self, overrides, respect_none=False):
+    def get_config_value(self, overrides):
         """Get the configuration value from all overrides.
 
         Iterates over all overrides given to see if a value can be pulled

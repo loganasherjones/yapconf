@@ -197,12 +197,15 @@ def test_convert_config_value_invalid_bool(bool_item):
 
 
 @pytest.mark.parametrize('env_name,default,config,expected', [
-    ('FOO', None, {'FOO': 'foo_value', 'foo': 'should not be this'}, 'foo_value'),
-    ('FOO', 'default', {'FOO': 'foo_value', 'foo': 'should not be this'}, 'foo_value'),
+    ('FOO', None, {'FOO': 'foo_value', 'foo': 'should not be this'},
+     'foo_value'),
+    ('FOO', 'default', {'FOO': 'foo_value', 'foo': 'should not be this'},
+     'foo_value'),
     ('FOO', 'default', {'FOO': None}, 'default'),
     ('FOO', 'default', {'FOO': ''}, 'default'),
 ])
-def test_get_config_value_from_environment(simple_item, env_name, default, config, expected):
+def test_get_config_value_from_environment(simple_item, env_name,
+                                           default, config, expected):
     simple_item.env_name = env_name
     simple_item.default = default
     value = simple_item.get_config_value([('ENVIRONMENT', config)])

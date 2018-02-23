@@ -158,7 +158,7 @@ class YapconfItem(object):
             based on whether or not this item is part of a nested list.
          separator: A separator used to split apart parent names in the prefix.
          prefix: A delimited list of parent names
-         bootstrap: A flag to detrmine if this item is required for
+         bootstrap: A flag to determine if this item is required for
             bootstrapping the rest of your configuration.
 
     Raises:

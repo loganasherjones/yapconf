@@ -49,11 +49,12 @@ def _get_item_env_name(item_name, item_dict, item_type, env_prefix, use_env):
     if not use_env or item_type in ['list', 'dict']:
         return None
 
-    default_env_name = item_name.upper()
-    if env_prefix:
-        default_env_name = env_prefix + default_env_name
+    env_name = item_dict.get('env_name', item_name.upper())
 
-    return item_dict.get('env_name', default_env_name)
+    if env_prefix: # TODO (maybe): and apply_prefix
+        env_name = env_prefix + env_name
+
+    return env_name
 
 
 def _get_item_children(item_name, item_dict, item_type, env_prefix,

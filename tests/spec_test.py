@@ -191,6 +191,7 @@ def real_world_spec():
                     'type': 'str',
                     'required': True,
                     'default': 'localhost',
+                    'env_name': 'HOST',
                     'previous_names': ['db_host'],
                 },
                 'port': {

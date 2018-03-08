@@ -106,9 +106,11 @@ be specified as follows:
 Environment Loading
 -------------------
 
-If no ``env_name`` is specified for each item, then by default, Yapconf will look for the item name in all upper case
-letters in the environment. Loading ``list`` items and ``dict`` items from the environment is not supported and as
-such ``env_name`` s that are set for these items will be ignored.
+If no ``env_name`` is specified for each item, then by default, Yapconf will automatically format the item's name
+to be all upper-case and snake case. So the name ``foo_bar`` will become ``FOO_BAR`` and ``fooBar`` will become
+``FOO_BAR``. If you do not want to apply this formatting, set ``format_env`` to ``False``. Loading ``list``
+items and ``dict`` items from the environment is not supported and as such ``env_name`` s that are set for these
+items will be ignored.
 
 Often times, you will want to prefix environment variables with your application name or something else. You can
 set an environment prefix on the ``YapconfSpec`` item via the ``env_prefix``:
@@ -148,9 +150,9 @@ argparse_. Let's assume the ``my_spec`` object from the original example
     my_spec.add_arguments(parser)
 
     args = [
-        '--db_name', 'db_name',
-        '--db_port', '1234',
-        '--db_host', 'localhost',
+        '--db-name', 'db_name',
+        '--db-port', '1234',
+        '--db-host', 'localhost',
         '--no-verbose',
         '--filename', '/path/to/file'
     ]
@@ -221,6 +223,20 @@ Limitations
 There are a few limitations to how far down the rabbit-hole Yapconf is willing to go. Yapconf does not support
 ``list`` type items with either ``dict`` or ``list`` children. The reason is that it would be very cumbersome
 to start specifying which items belong to which dictionaries and in which index in the list.
+
+
+CLI/Environment Name Formatting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A quick note on formatting and ``yapconf``. Yapconf tries to create sensible ways to convert your config items
+into "normal" environment variables and command-line arguments. In order to do this, we have to make some
+assumptions about what "normal" environment variables and command-line arguments are.
+
+By default, environment variables are assumed to be all upper-case, snake-case names. The item name ``foO_BaR``
+would become ``FOO_BAR`` in the environment.
+
+By default, command-line argument are assumed to be kebab-case. The item name ``foo_bar`` would become ``--foo-bar``
+
+If you do not like this formatting, then you can turn it off by setting the ``format_env`` and ``format_cli`` flags.
 
 Config Migration
 ----------------
@@ -308,6 +324,10 @@ For each item in a specification, you can set any of these keys:
 | separator         | ``.``            | The separator to use for ``dict`` type items (useful for ``previous_names``)                                   |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 | bootstrap         | ``False``        | A flag that indicates this item needs to be loaded before others can be loaded                                 |
++-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
+| format_env        | ``True``         | A flag to determine if environment variables will be all upper-case SNAKE_CASE.                                |
++-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
+| format_cli        | ``True``         | A flag to determine if we should format the command-line arguments to be kebab-case.                           |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 
 

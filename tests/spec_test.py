@@ -347,6 +347,8 @@ def test_load_config_yaml_not_supported(basic_spec):
 
 def test_load_config_nested_from_environment(spec_with_dicts):
     os.environ['FOO_BAR_BAZ'] = 'baz_value'
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print(spec_with_dicts.get_item('foo').children['bar'].children['baz'].env_name)
     config = spec_with_dicts.load_config(
         {
             'database': {'name': 'dbname', 'host': 'dbhost', 'port': 1234},

@@ -347,8 +347,6 @@ def test_load_config_yaml_not_supported(basic_spec):
 
 def test_load_config_nested_from_environment(spec_with_dicts):
     os.environ['FOO_BAR_BAZ'] = 'baz_value'
-    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    print(spec_with_dicts.get_item('foo').children['bar'].children['baz'].env_name)
     config = spec_with_dicts.load_config(
         {
             'database': {'name': 'dbname', 'host': 'dbhost', 'port': 1234},
@@ -594,3 +592,22 @@ def test_real_world_migrations(real_world_spec, current, expected,
             always_update=always_update)
 
         assert new_config == expected
+
+
+@pytest.mark.parametrize('env_name,apply_prefix,env_prefix,key', [
+    ('BG_HOST', True, 'BG_', 'BG_BG_HOST'),
+    ('BG_HOST', False, 'BG_', 'BG_HOST'),
+    ('HOST', True, 'BG_', 'BG_HOST'),
+])
+def test_env_names_with_prefixes(env_name, apply_prefix, env_prefix, key):
+    spec = YapconfSpec(
+        {
+            'bg_host': {
+                'type': 'str',
+                'env_name': env_name,
+                'apply_env_prefix': apply_prefix,
+            }
+        }, env_prefix=env_prefix)
+
+    config = spec.load_config(('ENVIRONMENT', {key: 'host_value'}))
+    assert config.bg_host == 'host_value'

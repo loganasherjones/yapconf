@@ -129,6 +129,9 @@ set an environment prefix on the ``YapconfSpec`` item via the ``env_prefix``:
     config.foo # returns 'namespaced_value'
 
 
+.. note:: When using an ``env_name`` with ``env_prefix`` the ``env_prefix`` will still be applied
+    to the name you provided. If you want to avoid this behavior, set the ``apply_env_prefix`` to ``False``.
+
 CLI Support
 -----------
 Yapconf has some great support for adding your configuration items as command-line arguments by utilizing
@@ -328,6 +331,8 @@ For each item in a specification, you can set any of these keys:
 | format_env        | ``True``         | A flag to determine if environment variables will be all upper-case SNAKE_CASE.                                |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 | format_cli        | ``True``         | A flag to determine if we should format the command-line arguments to be kebab-case.                           |
++-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
+| apply_env_prefix  | ``True``         | Apply the env_prefix even if the environment name was set manually. Ignored if ``format_env`` is ``False``     |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 
 

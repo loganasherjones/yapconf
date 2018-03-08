@@ -16,7 +16,7 @@ TYPES = ('str', 'int', 'long', 'float', 'bool', 'complex', 'dict', 'list', )
 
 
 def from_specification(specification, env_prefix=None, separator='.',
-                       use_env=True, parent_names=None):
+                       parent_names=None):
     """Used to create YapconfItems from a specification dictionary.
 
     Args:
@@ -24,7 +24,6 @@ def from_specification(specification, env_prefix=None, separator='.',
             initialize ``YapconfSpec``
         env_prefix (str): Prefix to add to environment names
         separator (str): Separator for nested items
-        use_env (bool): Flag to use or not use environment variables
         parent_names (list): Parents names of any given item
 
     Returns:
@@ -35,7 +34,7 @@ def from_specification(specification, env_prefix=None, separator='.',
     for item_name, item_info in six.iteritems(specification):
         names = parent_names or []
         items[item_name] = _generate_item(item_name, item_info, env_prefix,
-                                          separator, use_env, names)
+                                          separator, names)
     return items
 
 
@@ -46,43 +45,21 @@ def _get_item_cli_choices(item_type, item_dict):
         return item_dict.get('cli_choices')
 
 
-def _get_item_env_name(item_name, item_dict, item_type, env_prefix, use_env):
-    if not use_env or item_type in ['list', 'dict']:
-        return None
-
-    default_env_name = item_name.upper()
-    if env_prefix:
-        default_env_name = env_prefix + default_env_name
-
-    return item_dict.get('env_name', default_env_name)
-
-
-def _get_item_children(item_name, item_dict, item_type, env_prefix,
-                       use_env, env_name, parent_names, separator):
+def _get_item_children(item_name, item_dict, env_prefix,
+                       parent_names, separator):
     if item_dict.get('items'):
-        # We do not support getting list values from the environment at all.
-        if item_type == 'list':
-            use_env = False
-            new_env_prefix = None
-        else:
-            parent_names.append(item_name)
-            env_suffix = env_name or item_name.upper()
-            if env_prefix:
-                new_env_prefix = env_prefix + env_suffix + "_"
-            else:
-                new_env_prefix = env_suffix + "_"
+        parent_names.append(item_name)
 
         return from_specification(item_dict['items'],
-                                  env_prefix=new_env_prefix,
+                                  env_prefix=env_prefix,
                                   separator=separator,
-                                  use_env=use_env,
                                   parent_names=parent_names)
     else:
         return None
 
 
 def _generate_item(name, item_dict, env_prefix,
-                   separator, use_env, parent_names):
+                   separator, parent_names):
     init_args = {'name': name, 'separator': separator}
 
     item_type = item_dict.get('type', 'str')
@@ -106,17 +83,9 @@ def _generate_item(name, item_dict, env_prefix,
         init_args['prefix'] = None
 
     init_args['cli_choices'] = _get_item_cli_choices(item_type, item_dict)
-    init_args['env_name'] = _get_item_env_name(item_name=name,
-                                               item_dict=item_dict,
-                                               item_type=item_type,
-                                               env_prefix=env_prefix,
-                                               use_env=use_env)
     init_args['children'] = _get_item_children(item_name=name,
                                                item_dict=item_dict,
-                                               item_type=item_type,
                                                env_prefix=env_prefix,
-                                               use_env=use_env,
-                                               env_name=init_args['env_name'],
                                                parent_names=parent_names,
                                                separator=separator)
 

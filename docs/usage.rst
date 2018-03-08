@@ -129,8 +129,8 @@ set an environment prefix on the ``YapconfSpec`` item via the ``env_prefix``:
     config.foo # returns 'namespaced_value'
 
 
-.. note:: When using an ``env_name`` with ``env_prefix`` the ``env_prefix`` will still be applied to the name you
-provided. If you want to avoid this behavior, set the ``apply_env_prefix`` to ``False``.
+.. note:: When using an ``env_name`` with ``env_prefix`` the ``env_prefix`` will still be applied
+    to the name you provided. If you want to avoid this behavior, set the ``apply_env_prefix`` to ``False``.
 
 CLI Support
 -----------

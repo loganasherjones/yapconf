@@ -22,6 +22,27 @@ def simple_item():
 
 
 @pytest.fixture
+def unformatted_item():
+    return YapconfItem(
+        name='weirdName-Cool_stuff lol',
+        required=True,
+        format_env=False,
+        format_cli=False
+    )
+
+
+
+@pytest.fixture
+def unformatted_bool_item():
+    return YapconfBoolItem(
+        name='weirdName-Cool_stuff lol',
+        required=True,
+        format_env=False,
+        format_cli=False
+    )
+
+
+@pytest.fixture
 def list_item():
     return YapconfListItem(
         name='foos',
@@ -197,16 +218,25 @@ def test_convert_config_value_invalid_bool(bool_item):
 
 
 @pytest.mark.parametrize('env_name,default,config,expected', [
-    ('FOO', None, {'FOO': 'foo_value', 'foo': 'should not be this'}, 'foo_value'),
-    ('FOO', 'default', {'FOO': 'foo_value', 'foo': 'should not be this'}, 'foo_value'),
+    ('FOO', None, {'FOO': 'foo_value', 'foo': 'should not be this'},
+     'foo_value'),
+    ('FOO', 'default', {'FOO': 'foo_value', 'foo': 'should not be this'},
+     'foo_value'),
     ('FOO', 'default', {'FOO': None}, 'default'),
     ('FOO', 'default', {'FOO': ''}, 'default'),
 ])
-def test_get_config_value_from_environment(simple_item, env_name, default, config, expected):
+def test_get_config_value_from_environment(simple_item, env_name,
+                                           default, config, expected):
     simple_item.env_name = env_name
     simple_item.default = default
     value = simple_item.get_config_value([('ENVIRONMENT', config)])
     assert value == expected
+
+
+def test_get_config_value_unformatted_env(unformatted_item):
+    value = unformatted_item.get_config_value(
+        [('ENVIRONMENT', {unformatted_item.name: 'value'})])
+    assert value == 'value'
 
 
 def test_get_config_value_for_list(list_item):
@@ -311,29 +341,48 @@ def test_add_argument(simple_item, type, required,
     assert values[simple_item.name] == expected
 
 
-@pytest.mark.parametrize('default,args,expected', [
-    (True, ['--no-my_bool'], False),
-    (False, ['--my_bool'], True),
-    (None, ['--my_bool'], True),
-    (None, ['--no-my_bool'], False),
-    (True, [], None),
-    (False, [], None),
+@pytest.mark.parametrize('default,short_name,args,expected', [
+    (True, None, ['--no-my-bool'], False),
+    (False, None, ['--my-bool'], True),
+    (None, None, ['--my-bool'], True),
+    (None, None, ['--no-my-bool'], False),
+    (None, 'b', ['--no-b'], False),
+    (None, 'b', ['--b'], True),
+    (True, None, [], None),
+    (False, None, [], None),
 ])
-def test_add_bool_argument(bool_item, default, args, expected):
+def test_add_bool_argument(bool_item, default, short_name, args, expected):
     bool_item.default = default
+    bool_item.cli_short_name = short_name
     parser = ArgumentParser()
     bool_item.add_argument(parser)
     values = vars(parser.parse_args(args))
     assert values[bool_item.name] == expected
 
 
+def test_add_argument_unformatted(unformatted_item):
+    parser = ArgumentParser()
+    unformatted_item.add_argument(parser)
+    args = ['--%s' % unformatted_item.name, 'value']
+    values = vars(parser.parse_args(args))
+    assert values[unformatted_item.name] == 'value'
+
+
+def test_add_argument_unformatted_bool(unformatted_bool_item):
+    parser = ArgumentParser()
+    unformatted_bool_item.add_argument(parser)
+    args = ['--no-%s' % unformatted_bool_item.name]
+    values = vars(parser.parse_args(args))
+    assert values[unformatted_bool_item.name] is False
+
+
 @pytest.mark.parametrize('list_default,child_default,args,expected', [
-    (None, True, ['--my_bool', '--no-my_bool'], [True, False]),
-    (None, False, ['--no-my_bool', '--my_bool'], [False, True]),
+    (None, True, ['--my-bool', '--no-my-bool'], [True, False]),
+    (None, False, ['--no-my-bool', '--my-bool'], [False, True]),
     ([True, False], False, [], None),
     ([True, False], None, [], None),
-    ([True, False], None, ['--my_bool'], [True]),
-    ([True, False], None, ['--no-my_bool'], [False]),
+    ([True, False], None, ['--my-bool'], [True]),
+    ([True, False], None, ['--no-my-bool'], [False]),
 ])
 def test_add_list_boolean_arguments(bool_list_item,
                                     list_default,

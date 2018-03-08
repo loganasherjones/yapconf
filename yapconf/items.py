@@ -4,6 +4,7 @@ import sys
 
 import six
 
+import yapconf
 from yapconf.actions import MergeAction, AppendBoolean, AppendReplace
 from yapconf.exceptions import YapconfItemError, YapconfItemNotFound, \
     YapconfValueError, YapconfListItemError, YapconfDictItemError
@@ -15,7 +16,7 @@ TYPES = ('str', 'int', 'long', 'float', 'bool', 'complex', 'dict', 'list', )
 
 
 def from_specification(specification, env_prefix=None, separator='.',
-                       use_env=True, parent_names=None):
+                       parent_names=None):
     """Used to create YapconfItems from a specification dictionary.
 
     Args:
@@ -23,7 +24,6 @@ def from_specification(specification, env_prefix=None, separator='.',
             initialize ``YapconfSpec``
         env_prefix (str): Prefix to add to environment names
         separator (str): Separator for nested items
-        use_env (bool): Flag to use or not use environment variables
         parent_names (list): Parents names of any given item
 
     Returns:
@@ -34,7 +34,7 @@ def from_specification(specification, env_prefix=None, separator='.',
     for item_name, item_info in six.iteritems(specification):
         names = parent_names or []
         items[item_name] = _generate_item(item_name, item_info, env_prefix,
-                                          separator, use_env, names)
+                                          separator, names)
     return items
 
 
@@ -45,43 +45,21 @@ def _get_item_cli_choices(item_type, item_dict):
         return item_dict.get('cli_choices')
 
 
-def _get_item_env_name(item_name, item_dict, item_type, env_prefix, use_env):
-    if not use_env or item_type in ['list', 'dict']:
-        return None
-
-    default_env_name = item_name.upper()
-    if env_prefix:
-        default_env_name = env_prefix + default_env_name
-
-    return item_dict.get('env_name', default_env_name)
-
-
-def _get_item_children(item_name, item_dict, item_type, env_prefix,
-                       use_env, env_name, parent_names, separator):
+def _get_item_children(item_name, item_dict, env_prefix,
+                       parent_names, separator):
     if item_dict.get('items'):
-        # We do not support getting list values from the environment at all.
-        if item_type == 'list':
-            use_env = False
-            new_env_prefix = None
-        else:
-            parent_names.append(item_name)
-            env_suffix = env_name or item_name.upper()
-            if env_prefix:
-                new_env_prefix = env_prefix + env_suffix + "_"
-            else:
-                new_env_prefix = env_suffix + "_"
+        parent_names.append(item_name)
 
         return from_specification(item_dict['items'],
-                                  env_prefix=new_env_prefix,
+                                  env_prefix=env_prefix,
                                   separator=separator,
-                                  use_env=use_env,
                                   parent_names=parent_names)
     else:
         return None
 
 
 def _generate_item(name, item_dict, env_prefix,
-                   separator, use_env, parent_names):
+                   separator, parent_names):
     init_args = {'name': name, 'separator': separator}
 
     item_type = item_dict.get('type', 'str')
@@ -94,6 +72,10 @@ def _generate_item(name, item_dict, env_prefix,
     init_args['previous_names'] = item_dict.get('previous_names')
     init_args['previous_defaults'] = item_dict.get('previous_defaults')
     init_args['cli_expose'] = item_dict.get('cli_expose', True)
+    init_args['env_name'] = item_dict.get('env_name', None)
+    init_args['format_cli'] = item_dict.get('format_cli', True)
+    init_args['format_env'] = item_dict.get('format_env', True)
+    init_args['env_prefix'] = env_prefix
 
     if parent_names:
         init_args['prefix'] = separator.join(parent_names)
@@ -101,17 +83,9 @@ def _generate_item(name, item_dict, env_prefix,
         init_args['prefix'] = None
 
     init_args['cli_choices'] = _get_item_cli_choices(item_type, item_dict)
-    init_args['env_name'] = _get_item_env_name(item_name=name,
-                                               item_dict=item_dict,
-                                               item_type=item_type,
-                                               env_prefix=env_prefix,
-                                               use_env=use_env)
     init_args['children'] = _get_item_children(item_name=name,
                                                item_dict=item_dict,
-                                               item_type=item_type,
                                                env_prefix=env_prefix,
-                                               use_env=use_env,
-                                               env_name=init_args['env_name'],
                                                parent_names=parent_names,
                                                separator=separator)
 
@@ -158,8 +132,13 @@ class YapconfItem(object):
             based on whether or not this item is part of a nested list.
          separator: A separator used to split apart parent names in the prefix.
          prefix: A delimited list of parent names
-         bootstrap: A flag to detrmine if this item is required for
+         bootstrap: A flag to determine if this item is required for
             bootstrapping the rest of your configuration.
+         format_cli: A flag to determine if we should format the command-line
+            arguments to be kebab-case.
+         format_env: A flag to determine if environment variables will be all
+            upper-case SNAKE_CASE.
+         env_prefix: The env_prefix to apply to the environment name.
 
     Raises:
         YapconfItemError: If any of the information given during
@@ -171,7 +150,8 @@ class YapconfItem(object):
                  description=None, required=True, cli_short_name=None,
                  cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
-                 bootstrap=False):
+                 bootstrap=False, format_cli=True, format_env=True,
+                 env_prefix=None):
 
         self.name = name
         self.item_type = item_type
@@ -188,12 +168,16 @@ class YapconfItem(object):
         self.separator = separator
         self.prefix = prefix
         self.bootstrap = bootstrap
+        self.format_env = format_env
+        self.format_cli = format_cli
+        self.env_prefix = env_prefix or ''
 
         if self.prefix:
             self.fq_name = self.separator.join([self.prefix, self.name])
         else:
             self.fq_name = self.name
 
+        self._setup_env_name()
         self.possible_names = [self.fq_name] + self.previous_names
         self.cli_support = self._has_cli_support()
         self.logger = logging.getLogger(__name__)
@@ -256,7 +240,7 @@ class YapconfItem(object):
             kwargs = self._get_argparse_kwargs(bootstrap)
             parser.add_argument(*args, **kwargs)
 
-    def get_config_value(self, overrides, respect_none=False):
+    def get_config_value(self, overrides):
         """Get the configuration value from all overrides.
 
         Iterates over all overrides given to see if a value can be pulled
@@ -340,6 +324,20 @@ class YapconfItem(object):
                                    "character.".format(self.cli_short_name))
         elif self.cli_short_name == '-':
             raise YapconfItemError("CLI Short name cannot be '-'")
+
+    def __repr__(self):
+        return "Item(%s, %s)" % (self.fq_name, self.item_type)
+
+    def _setup_env_name(self):
+        if self.env_name is not None:
+            return
+
+        if self.format_env:
+            env_name = (self.env_prefix +
+                        "_".join(self.fq_name.split(self.separator)))
+            self.env_name = yapconf.change_case(env_name, "_").upper()
+        else:
+            self.env_name = "".join(self.fq_name.split(self.separator))
 
     def _has_cli_support(self, child_of_list=False):
         for child in self.children.values():
@@ -466,11 +464,15 @@ class YapconfItem(object):
 
     def _get_argparse_names(self, prefix_chars):
         cli_prefix = self._format_prefix_for_cli(prefix_chars)
+        if self.format_cli:
+            cli_name = yapconf.change_case(self.name, prefix_chars)
+        else:
+            cli_name = self.name
         if self.cli_short_name:
-            return ["{0}{1}".format(cli_prefix, self.name),
+            return ["{0}{1}".format(cli_prefix, cli_name),
                     "{0}{1}".format(prefix_chars, self.cli_short_name)]
         else:
-            return ["{0}{1}".format(cli_prefix, self.name)]
+            return ["{0}{1}".format(cli_prefix, cli_name)]
 
     def _get_argparse_kwargs(self, bootstrap):
         kwargs = {
@@ -504,11 +506,13 @@ class YapconfBoolItem(YapconfItem):
                  description=None, required=True, cli_short_name=None,
                  cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
-                 bootstrap=False):
+                 bootstrap=False, format_cli=True, format_env=True,
+                 env_prefix=None):
         super(YapconfBoolItem, self).__init__(
             name, item_type, default, env_name, description, required,
             cli_short_name, cli_choices, previous_names, previous_defaults,
-            children, cli_expose, separator, prefix, bootstrap)
+            children, cli_expose, separator, prefix, bootstrap, format_cli,
+            format_env, env_prefix)
 
     def add_argument(self, parser, bootstrap=False):
         """Add boolean item as an argument to the given parser.
@@ -575,15 +579,20 @@ class YapconfBoolItem(YapconfItem):
 
     def _get_argparse_names(self, prefix_chars):
         cli_prefix = self._format_prefix_for_cli(prefix_chars)
-        if self.default:
-            full_name = "{0}no{1}{2}".format(cli_prefix,
-                                             prefix_chars,
-                                             self.name)
+        if self.format_cli:
+            cli_name = yapconf.change_case(self.name, prefix_chars)
         else:
-            full_name = "{0}{1}".format(cli_prefix, self.name)
+            cli_name = self.name
+
+        if self.default:
+            full_prefix = "{0}no{1}".format(cli_prefix, prefix_chars)
+        else:
+            full_prefix = cli_prefix
+
+        full_name = "{0}{1}".format(full_prefix, cli_name)
 
         if self.cli_short_name:
-            return [full_name, "{0}{1}".format(prefix_chars,
+            return [full_name, "{0}{1}".format(full_prefix,
                                                self.cli_short_name)]
         else:
             return [full_name]
@@ -612,12 +621,14 @@ class YapconfListItem(YapconfItem):
                  description=None, required=True, cli_short_name=None,
                  cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
-                 bootstrap=False):
+                 bootstrap=False, format_cli=True, format_env=True,
+                 env_prefix=None):
 
         super(YapconfListItem, self).__init__(
             name, item_type, default, env_name, description, required,
             cli_short_name, cli_choices, previous_names, previous_defaults,
-            children, cli_expose, separator, prefix, bootstrap)
+            children, cli_expose, separator, prefix, bootstrap, format_cli,
+            format_env, env_prefix)
 
         if len(self.children) != 1:
             raise YapconfListItemError("List Items can only have a "
@@ -625,6 +636,9 @@ class YapconfListItem(YapconfItem):
                                        .format(len(self.children)))
 
         self.child = list(children.values())[0]
+
+    def _setup_env_name(self):
+        self.env_name = None
 
     def get_config_value(self, overrides):
         label, override = self._find_label_and_override(overrides,
@@ -739,16 +753,21 @@ class YapconfDictItem(YapconfItem):
                  description=None, required=True, cli_short_name=None,
                  cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
-                 bootstrap=False):
+                 bootstrap=False, format_cli=True, format_env=True,
+                 env_prefix=None):
 
         super(YapconfDictItem, self).__init__(
             name, item_type, default, env_name, description, required,
             cli_short_name, cli_choices, previous_names, previous_defaults,
-            children, cli_expose, separator, prefix, bootstrap)
+            children, cli_expose, separator, prefix, bootstrap, format_cli,
+            format_env, env_prefix)
 
         if len(self.children) < 1:
             raise YapconfDictItemError('Dict item {0} must have children'
                                        .format(self.name))
+
+    def _setup_env_name(self):
+        self.env_name = None
 
     def add_argument(self, parser, bootstrap=False):
         """Add dict-style item as an argument to the given parser.

@@ -347,6 +347,8 @@ def test_load_config_yaml_not_supported(basic_spec):
 
 def test_load_config_nested_from_environment(spec_with_dicts):
     os.environ['FOO_BAR_BAZ'] = 'baz_value'
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print(spec_with_dicts.get_item('foo').children['bar'].children['baz'].env_name)
     config = spec_with_dicts.load_config(
         {
             'database': {'name': 'dbname', 'host': 'dbhost', 'port': 1234},
@@ -458,9 +460,9 @@ def test_load_config_real_world(real_world_spec):
     parser = ArgumentParser(conflict_handler='resolve')
     real_world_spec.add_arguments(parser, bootstrap=True)
     cli_args = ['--file', '/path/to/file.yaml',
-                '--web_port', '1234',
-                '--ssl-public_key', '/path/to/public.crt',
-                '--ssl-private_key', '/path/to/private.key',
+                '--web-port', '1234',
+                '--ssl-public-key', '/path/to/public.crt',
+                '--ssl-private-key', '/path/to/private.key',
                 '--database-verbose'
                 ]
     cli_values = vars(parser.parse_args(cli_args))

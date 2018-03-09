@@ -121,6 +121,11 @@ def bool_item():
     ),
     (
         YapconfItem,
+        {'name': 'foo', 'choices': ['a'], 'default': 'b'},
+        YapconfValueError
+    ),
+    (
+        YapconfItem,
         {'name': 'foo', 'cli_short_name': 'too_long'},
         YapconfItemError
     ),
@@ -132,6 +137,12 @@ def bool_item():
     (
         YapconfDictItem,
         {'name': 'foo', 'children': {}},
+        YapconfDictItemError
+    ),
+    (
+        YapconfDictItem,
+        {'name': 'foo', 'children': {'item1': simple_item()},
+         'choices': [{'foo': 'bar'}]},
         YapconfDictItemError
     ),
     (
@@ -446,3 +457,38 @@ def test_basic_dict_add_argument(db_item,
     db_item.add_argument(parser)
     values = vars(parser.parse_args(args))
     assert values[db_item.name] == expected
+
+
+@pytest.mark.parametrize('item,config', [
+    (
+        YapconfItem("foo", choices=['a', 'b', 'c']),
+        {'foo': 'd'}
+    ),
+    (
+        YapconfListItem("foos",
+                        children={
+                            'foo': YapconfItem('foo',
+                                               choices=['a', 'b', 'c'])
+                        }),
+        {'foos': ['d']},
+    ),
+    (
+        YapconfListItem("foos",
+                        choices=[['a', 'a'], ['a', 'b'], ['c']],
+                        children={
+                            'foo': YapconfItem('foo',
+                                               choices=['a', 'b', 'c'])
+                        }),
+        {'foos': ['a']}
+    ),
+    (
+        YapconfDictItem("foo_dict",
+                        children={
+                            "foo": YapconfItem('foo', choices=['bar', 'baz'])
+                        }),
+        {'foo_dict': {'foo': 'invalid'}}
+    ),
+])
+def test_choices(item, config):
+    with pytest.raises(YapconfValueError):
+        item.get_config_value([('test', config)])

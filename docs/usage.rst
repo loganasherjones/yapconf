@@ -334,6 +334,9 @@ For each item in a specification, you can set any of these keys:
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 | apply_env_prefix  | ``True``         | Apply the env_prefix even if the environment name was set manually. Ignored if ``format_env`` is ``False``     |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
+| choices           | ``None``         | A list of valid choices for the item. Cannot be set for ``dict`` items.                                        |
++-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
+
 
 
 .. _python-box: https://github.com/cdgriffith/Box

@@ -77,6 +77,7 @@ def _generate_item(name, item_dict, env_prefix,
     init_args['format_env'] = item_dict.get('format_env', True)
     init_args['apply_env_prefix'] = item_dict.get('apply_env_prefix', True)
     init_args['env_prefix'] = env_prefix
+    init_args['choices'] = item_dict.get('choices', None)
 
     if parent_names:
         init_args['prefix'] = separator.join(parent_names)
@@ -143,6 +144,7 @@ class YapconfItem(object):
          apply_env_prefix: Apply the env_prefix even if the environment name
             was set manually. Setting format_env to false will override this
             behavior.
+         choices: A list of valid choices for the item.
 
     Raises:
         YapconfItemError: If any of the information given during
@@ -155,7 +157,7 @@ class YapconfItem(object):
                  cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
                  bootstrap=False, format_cli=True, format_env=True,
-                 env_prefix=None, apply_env_prefix=True):
+                 env_prefix=None, apply_env_prefix=True, choices=None):
 
         self.name = name
         self.item_type = item_type
@@ -176,6 +178,7 @@ class YapconfItem(object):
         self.format_cli = format_cli
         self.env_prefix = env_prefix or ''
         self.apply_env_prefix = apply_env_prefix
+        self.choices = choices
 
         if self.prefix:
             self.fq_name = self.separator.join([self.prefix, self.name])
@@ -286,7 +289,15 @@ class YapconfItem(object):
         if value is None:
             return value
 
-        return self.convert_config_value(value, label)
+        converted_value = self.convert_config_value(value, label)
+        self._validate_value(converted_value)
+        return converted_value
+
+    def _validate_value(self, value):
+        if self.choices and value not in self.choices:
+            raise YapconfValueError("Invalid value provided (%s)."
+                                    "Valid values are %s" %
+                                    (value, self.choices))
 
     def convert_config_value(self, value, label):
         try:
@@ -329,6 +340,9 @@ class YapconfItem(object):
                                    "character.".format(self.cli_short_name))
         elif self.cli_short_name == '-':
             raise YapconfItemError("CLI Short name cannot be '-'")
+
+        if self.default:
+            self._validate_value(self.default)
 
     def __repr__(self):
         return "Item(%s, %s)" % (self.fq_name, self.item_type)
@@ -514,12 +528,12 @@ class YapconfBoolItem(YapconfItem):
                  cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
                  bootstrap=False, format_cli=True, format_env=True,
-                 env_prefix=None, apply_env_prefix=True):
+                 env_prefix=None, apply_env_prefix=True, choices=None):
         super(YapconfBoolItem, self).__init__(
             name, item_type, default, env_name, description, required,
             cli_short_name, cli_choices, previous_names, previous_defaults,
             children, cli_expose, separator, prefix, bootstrap, format_cli,
-            format_env, env_prefix, apply_env_prefix)
+            format_env, env_prefix, apply_env_prefix, choices)
 
     def add_argument(self, parser, bootstrap=False):
         """Add boolean item as an argument to the given parser.
@@ -629,13 +643,13 @@ class YapconfListItem(YapconfItem):
                  cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
                  bootstrap=False, format_cli=True, format_env=True,
-                 env_prefix=None, apply_env_prefix=True):
+                 env_prefix=None, apply_env_prefix=True, choices=None):
 
         super(YapconfListItem, self).__init__(
             name, item_type, default, env_name, description, required,
             cli_short_name, cli_choices, previous_names, previous_defaults,
             children, cli_expose, separator, prefix, bootstrap, format_cli,
-            format_env, env_prefix, apply_env_prefix)
+            format_env, env_prefix, apply_env_prefix, choices)
 
         if len(self.children) != 1:
             raise YapconfListItemError("List Items can only have a "
@@ -663,19 +677,18 @@ class YapconfListItem(YapconfItem):
         if values is None:
             return None
 
-        try:
-            return [
-                self.child.convert_config_value(value, label)
-                for value in values
-            ]
-        except TypeError:
-            raise YapconfValueError('{0} was found in {1} but we expected the '
-                                    'item to be a list'
-                                    .format(self.name, label))
+        converted_value = self.convert_config_value(values, label)
+        self._validate_value(converted_value)
+        return converted_value
 
     def convert_config_value(self, value, label):
         try:
-            return [self.child.convert_config_value(v, label) for v in value]
+            value_to_return = []
+            for v in value:
+                converted_value = self.child.convert_config_value(v, label)
+                self.child._validate_value(converted_value)
+                value_to_return.append(converted_value)
+            return value_to_return
         except (TypeError, ValueError) as ex:
             raise YapconfValueError('Tried to convert "{0}" to a list but '
                                     'could not iterate over the value. '
@@ -761,14 +774,18 @@ class YapconfDictItem(YapconfItem):
                  cli_choices=None, previous_names=None, previous_defaults=None,
                  children=None, cli_expose=True, separator='.', prefix=None,
                  bootstrap=False, format_cli=True, format_env=True,
-                 env_prefix=None, apply_env_prefix=True):
+                 env_prefix=None, apply_env_prefix=True, choices=None):
 
         super(YapconfDictItem, self).__init__(
             name, item_type, default, env_name, description, required,
             cli_short_name, cli_choices, previous_names, previous_defaults,
             children, cli_expose, separator, prefix, bootstrap, format_cli,
-            format_env, env_prefix, apply_env_prefix)
+            format_env, env_prefix, apply_env_prefix, choices)
 
+        if self.choices is not None:
+            raise YapconfDictItemError('Dict items {0} cannot have choices '
+                                       'because they are not hashable.'
+                                       .format(self.name))
         if len(self.children) < 1:
             raise YapconfDictItemError('Dict item {0} must have children'
                                        .format(self.name))
@@ -802,10 +819,12 @@ class YapconfDictItem(YapconfItem):
     def get_config_value(self, overrides):
         nested_overrides = self._find_all_overrides(overrides)
 
-        return {
+        converted_value = {
             child_name: child_item.get_config_value(nested_overrides)
             for child_name, child_item in six.iteritems(self.children)
         }
+        self._validate_value(converted_value)
+        return converted_value
 
     def migrate_config(self, current_config, config_to_migrate,
                        always_update, update_defaults):

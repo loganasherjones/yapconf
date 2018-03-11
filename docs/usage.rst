@@ -132,6 +132,10 @@ set an environment prefix on the ``YapconfSpec`` item via the ``env_prefix``:
 .. note:: When using an ``env_name`` with ``env_prefix`` the ``env_prefix`` will still be applied
     to the name you provided. If you want to avoid this behavior, set the ``apply_env_prefix`` to ``False``.
 
+As of version 0.1.2, you can specify additional environment names via: ``alt_env_names``. The ``apply_env_prefix``
+flag will also apply to each of these. If your environment names collide with other names, then an error will
+get raised when the specification is created.
+
 CLI Support
 -----------
 Yapconf has some great support for adding your configuration items as command-line arguments by utilizing
@@ -335,6 +339,8 @@ For each item in a specification, you can set any of these keys:
 | apply_env_prefix  | ``True``         | Apply the env_prefix even if the environment name was set manually. Ignored if ``format_env`` is ``False``     |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 | choices           | ``None``         | A list of valid choices for the item. Cannot be set for ``dict`` items.                                        |
++-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
+| alt_env_names     | ``[]``           | A list of alternate environment names.                                                                         |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 
 

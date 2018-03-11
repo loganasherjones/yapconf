@@ -62,7 +62,8 @@ def bool_list_item():
 
 @pytest.fixture
 def db_item():
-    db_name_item = YapconfItem(name='name', required=True, prefix='db')
+    db_name_item = YapconfItem(name='name', required=True, prefix='db',
+                               alt_env_names=['ALT_NAME'])
     log_level_item = YapconfItem(name='level', required=True, prefix='db.log')
     log_file_item = YapconfItem(name='file', required=True, prefix='db.log')
     db_user_item = YapconfItem(name='user', required=True, prefix='db')
@@ -111,6 +112,35 @@ def bool_item():
         required=True,
         default=True
     )
+
+
+@pytest.mark.parametrize('clazz,kwargs,env_names', [
+    (
+        YapconfItem,
+        {'name': 'foo', 'env_name': None, 'alt_env_names': []},
+        ['FOO']
+    ),
+    (
+        YapconfItem,
+        {'name': 'foo', 'env_name': None, 'alt_env_names': ['bar']},
+        ['FOO', 'bar']
+    ),
+    (
+        YapconfItem,
+        {'name': 'foo', 'env_name': None, 'alt_env_names': ['bar'],
+         'env_prefix': 'MY_APP_'},
+        ['MY_APP_FOO', 'MY_APP_bar']
+    ),
+    (
+        YapconfListItem,
+        {'name': 'foos', 'env_name': 'FOOS', 'alt_env_names': ['BARS'],
+         'children': {'foo': simple_item()}},
+        []
+    )
+])
+def test_env_names(clazz, kwargs, env_names):
+    item = clazz(**kwargs)
+    assert item.all_env_names == env_names
 
 
 @pytest.mark.parametrize('clazz,kwargs,error_clazz', [
@@ -228,16 +258,19 @@ def test_convert_config_value_invalid_bool(bool_item):
         bool_item.convert_config_value('INVALID_VALUE', 'label')
 
 
-@pytest.mark.parametrize('env_name,default,config,expected', [
-    ('FOO', None, {'FOO': 'foo_value', 'foo': 'should not be this'},
+@pytest.mark.parametrize('env_name,alt_names, default,config,expected', [
+    ('FOO', [], None, {'FOO': 'foo_value', 'foo': 'should not be this'},
      'foo_value'),
-    ('FOO', 'default', {'FOO': 'foo_value', 'foo': 'should not be this'},
+    ('FOO', [], 'default', {'FOO': 'foo_value', 'foo': 'should not be this'},
      'foo_value'),
-    ('FOO', 'default', {'FOO': None}, 'default'),
-    ('FOO', 'default', {'FOO': ''}, 'default'),
+    ('FOO', [], 'default', {'FOO': None}, 'default'),
+    ('FOO', [], 'default', {'FOO': ''}, 'default'),
+    ('FOO', ['FOO_BACKUP'], None, {'FOO_BACKUP': 'foo_backup_value'},
+     'foo_backup_value')
 ])
-def test_get_config_value_from_environment(simple_item, env_name,
+def test_get_config_value_from_environment(simple_item, env_name, alt_names,
                                            default, config, expected):
+    simple_item.alt_env_names = alt_names
     simple_item.env_name = env_name
     simple_item.default = default
     value = simple_item.get_config_value([('ENVIRONMENT', config)])
@@ -457,6 +490,25 @@ def test_basic_dict_add_argument(db_item,
     db_item.add_argument(parser)
     values = vars(parser.parse_args(args))
     assert values[db_item.name] == expected
+
+
+def test_basic_dict_get_config_value_from_env(db_item):
+    value = db_item.get_config_value(
+        [
+            ('ENVIRONMENT',
+             {'ALT_NAME': 'db_name', 'DB_PORT': '1234',
+              'DB_VERBOSE': 'True'}
+             ),
+            ('dict1',
+             {'db': {'users': ['user1', 'user2'],
+                     'log': {'level': 'INFO', 'file': '/some/file'}
+                     }
+              }
+             )
+        ]
+    )
+    assert value['name'] == 'db_name'
+    assert value['port'] == 1234
 
 
 @pytest.mark.parametrize('item,config', [

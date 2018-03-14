@@ -290,7 +290,7 @@ class YapconfItem(object):
 
         if override is None and self.default is None and self.required:
             raise YapconfItemNotFound('Could not find config value for {0}'
-                                      .format(self.name))
+                                      .format(self.name), self)
 
         if override is None:
             self.logger.info('Config value not found for {0}, falling back '
@@ -695,7 +695,7 @@ class YapconfListItem(YapconfItem):
 
         if override is None and self.default is None and self.required:
             raise YapconfItemNotFound('Could not find config value for {0}'
-                                      .format(self.name))
+                                      .format(self.name), self)
 
         if override is None:
             values = self.default

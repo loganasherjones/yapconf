@@ -2,6 +2,11 @@
 History
 =======
 
+0.2.1 (2018-03-11)
+------------------
+* Added item to YapconfItemNotFound (#21)
+* Removed pytest-runner from setup_reuires (#22)
+
 0.2.0 (2018-03-11)
 ------------------
 

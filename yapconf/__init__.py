@@ -17,7 +17,7 @@ except ImportError:
 
 __author__ = """Logan Asher Jones"""
 __email__ = 'loganasherjones@gmail.com'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 
 FILE_TYPES = ('json',)

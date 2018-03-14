@@ -40,7 +40,9 @@ class YapconfDictItemError(YapconfItemError):
 
 class YapconfItemNotFound(YapconfItemError):
     """We searched through all the overrides and could not find the item"""
-    pass
+    def __init__(self, message, item):
+        super(YapconfItemNotFound, self).__init__(message)
+        self.item = item
 
 
 class YapconfValueError(YapconfItemError):

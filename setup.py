@@ -16,12 +16,9 @@ requirements = [
     'python-box',
 ]
 
-setup_requirements = [
-    'pytest-runner',
-]
-
 test_requirements = [
     'pytest',
+    'pytest-runner',
     'pytest-cov',
     'pluggy<0.7,>=0.5',
     'codecov',
@@ -58,5 +55,4 @@ setup(
     ],
     test_suite='tests',
     tests_require=test_requirements,
-    setup_requires=setup_requirements,
 )

@@ -31,7 +31,6 @@ def unformatted_item():
     )
 
 
-
 @pytest.fixture
 def unformatted_bool_item():
     return YapconfBoolItem(

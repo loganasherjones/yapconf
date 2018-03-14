@@ -144,7 +144,7 @@ class YapconfSpec(object):
             if item is None:
                 raise YapconfItemNotFound("Cannot update default for {0}, "
                                           "there is no config item by the "
-                                          "name of {1}".format(key, key))
+                                          "name of {1}".format(key, key), None)
 
             item.update_default(value, respect_none)
 

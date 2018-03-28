@@ -3,6 +3,7 @@ import logging
 import json
 import six
 import os
+import sys
 
 from box import Box
 
@@ -10,6 +11,9 @@ import yapconf
 from yapconf.exceptions import YapconfSpecError, YapconfLoadError, \
     YapconfItemNotFound
 from yapconf.items import from_specification
+
+if sys.version_info.major < 3:
+    from io import open
 
 
 class YapconfSpec(object):

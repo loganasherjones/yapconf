@@ -19,6 +19,8 @@ builtins_path = '__builtin__'
 if sys.version_info > (3,):
     builtins_path = 'builtins'
     long = int
+else:
+    builtins_path = 'yapconf.spec'
 
 original_env = None
 original_yaml_flag = yapconf.yaml_support

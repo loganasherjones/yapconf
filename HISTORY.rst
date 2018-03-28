@@ -2,6 +2,10 @@
 History
 =======
 
+0.2.2 (2018-03-28)
+------------------
+* Fixed Python2 compatibility error (#35)
+
 0.2.1 (2018-03-11)
 ------------------
 * Added item to YapconfItemNotFound (#21)

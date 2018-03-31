@@ -440,6 +440,32 @@ def test_migrate_config_file_update_previous_default():
     assert new_config == {'foo': 'baz'}
 
 
+def test_migrate_config_no_mock(tmpdir, basic_spec):
+    new_path = tmpdir.join('config.json')
+    with pytest.raises(YapconfLoadError):
+        basic_spec.migrate_config_file(str(new_path), create=False)
+
+
+def test_migrate_config_no_mock_create_file(tmpdir, basic_spec):
+    new_path = tmpdir.join('config.json')
+    basic_spec.migrate_config_file(str(new_path), create=True)
+    assert json.load(new_path) == {"foo": None}
+
+
+def test_migrate_config_no_mock_existing_file(tmpdir, basic_spec):
+    new_path = tmpdir.join('config.json')
+    new_path.ensure()
+    config = {"foo": None}
+
+    with new_path.open(mode='w') as fp:
+        json.dump(config, fp)
+
+    basic_spec.migrate_config_file(str(new_path), create=False)
+
+    with new_path.open(mode='r') as fp:
+        assert json.load(fp) == config
+
+
 def test_get_item(basic_spec):
     assert basic_spec.get_item('foo') is not None
     assert basic_spec.get_item('no name match') is None

@@ -393,12 +393,9 @@ def test_migrate_config_file_does_not_exist_do_not_create(basic_spec):
 @patch('os.path.isfile', Mock(return_value=False))
 def test_migrate_config_file_does_not_exist_create(basic_spec):
     open_path = builtins_path + '.open'
-    with patch('json.dump') as dump_mock:
-        with patch(open_path, mock_open()) as mock_file:
-            new_config = basic_spec.migrate_config_file('/path/to/file',
-                                                        create=True)
-            dump_mock.assert_called_with({"foo": None}, mock_file(),
-                                         sort_keys=True, indent=4)
+    with patch(open_path, mock_open()):
+        new_config = basic_spec.migrate_config_file('/path/to/file',
+                                                    create=True)
 
     assert new_config == {"foo": None}
 

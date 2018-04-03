@@ -374,7 +374,8 @@ class YapconfSpec(object):
 
         with open(filename, 'w', encoding=self._encoding) as conf_file:
             if file_type == 'json':
-                json.dump(dictionary, conf_file, sort_keys=True, indent=4)
+                dumped = json.dumps(dictionary, sort_keys=True, indent=4)
+                conf_file.write(six.u(dumped))
             elif file_type == 'yaml':
                 yapconf.yaml.dump(dictionary, conf_file)
 

@@ -393,12 +393,9 @@ def test_migrate_config_file_does_not_exist_do_not_create(basic_spec):
 @patch('os.path.isfile', Mock(return_value=False))
 def test_migrate_config_file_does_not_exist_create(basic_spec):
     open_path = builtins_path + '.open'
-    with patch('json.dump') as dump_mock:
-        with patch(open_path, mock_open()) as mock_file:
-            new_config = basic_spec.migrate_config_file('/path/to/file',
-                                                        create=True)
-            dump_mock.assert_called_with({"foo": None}, mock_file(),
-                                         sort_keys=True, indent=4)
+    with patch(open_path, mock_open()):
+        new_config = basic_spec.migrate_config_file('/path/to/file',
+                                                    create=True)
 
     assert new_config == {"foo": None}
 
@@ -438,6 +435,32 @@ def test_migrate_config_file_update_previous_default():
                                               create=False,
                                               update_defaults=True)
     assert new_config == {'foo': 'baz'}
+
+
+def test_migrate_config_no_mock(tmpdir, basic_spec):
+    new_path = tmpdir.join('config.json')
+    with pytest.raises(YapconfLoadError):
+        basic_spec.migrate_config_file(str(new_path), create=False)
+
+
+def test_migrate_config_no_mock_create_file(tmpdir, basic_spec):
+    new_path = tmpdir.join('config.json')
+    basic_spec.migrate_config_file(str(new_path), create=True)
+    assert json.load(new_path) == {"foo": None}
+
+
+def test_migrate_config_no_mock_existing_file(tmpdir, basic_spec):
+    new_path = tmpdir.join('config.json')
+    new_path.ensure()
+    config = {"foo": None}
+
+    with new_path.open(mode='w') as fp:
+        json.dump(config, fp)
+
+    basic_spec.migrate_config_file(str(new_path), create=False)
+
+    with new_path.open(mode='r') as fp:
+        assert json.load(fp) == config
 
 
 def test_get_item(basic_spec):

@@ -28,7 +28,7 @@ test_requirements = [
 
 setup(
     name='yapconf',
-    version='0.2.2',
+    version='0.2.3',
     description="Yet Another Python Configuration",
     long_description=readme + '\n\n' + history,
     author="Logan Asher Jones",

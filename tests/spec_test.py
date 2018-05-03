@@ -449,10 +449,19 @@ def test_migrate_config_no_mock_create_file(tmpdir, basic_spec):
     assert json.load(new_path) == {"foo": None}
 
 
-def test_migrate_config_no_mock_existing_file(tmpdir, basic_spec):
+@pytest.mark.parametrize('config', [
+    {"foo": None},
+    {"foo": "bar"},
+    {"foo": u"bar"},
+    {"foo": u"\U0001F4A9"},
+    {"foo": u"💩"},
+    {u"\U0001F4A9": "foo"},
+    {u"💩": "foo"},
+    {u"💩": u"💩"},
+])
+def test_migrate_config_no_mock_existing_file(tmpdir, basic_spec, config):
     new_path = tmpdir.join('config.json')
     new_path.ensure()
-    config = {"foo": None}
 
     with new_path.open(mode='w') as fp:
         json.dump(config, fp)

@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """Top-level package for Yapconf."""
-import collections
 import json
-import logging
 import re
 import sys
 

@@ -23,7 +23,7 @@ else:
     builtins_path = 'yapconf.spec'
 
 original_env = None
-original_yaml_flag = yapconf.yaml_support
+original_yaml = yapconf.yaml
 
 
 def setup_function(function):
@@ -33,7 +33,7 @@ def setup_function(function):
 
 def teardown_function(function):
     os.environ = original_env
-    yapconf.yaml_support = original_yaml_flag
+    yapconf.yaml = original_yaml
 
 
 @pytest.fixture
@@ -312,14 +312,14 @@ def test_load_config_fallbacks(simple_spec):
 ])
 def test_load_specification_from_file(file_type, file_data,
                                       overrides, expected_value):
-    open_path = builtins_path + '.open'
+    open_path = 'yapconf.open'
     with patch(open_path, mock_open(read_data=file_data)):
         spec = YapconfSpec('/path/to/specification', file_type=file_type)
         assert spec.load_config(overrides) == expected_value
 
 
 def test_load_bad_specification_from_file():
-    open_path = builtins_path + '.open'
+    open_path = 'yapconf.open'
     with patch(open_path, mock_open(read_data="[]")):
         with pytest.raises(YapconfSpecError):
             YapconfSpec('/path/to/bad/spec', file_type='json')
@@ -342,7 +342,7 @@ def test_load_config_invalid_override(basic_spec, override):
 
 
 def test_load_config_yaml_not_supported(basic_spec):
-    yapconf.yaml_support = False
+    yapconf.yaml = None
     with pytest.raises(YapconfLoadError):
         basic_spec.load_config(('label', 'path/to/file', 'yaml'))
 
@@ -375,7 +375,7 @@ def test_load_config_multi_part_dictionary(spec_with_dicts):
 
 @patch('os.path.isfile', Mock(return_value=True))
 def test_migrate_config_file_no_changes(basic_spec):
-    open_path = builtins_path + '.open'
+    open_path = 'yapconf.open'
     current_config = '{"foo": "bar"}'
     with patch(open_path, mock_open(read_data=current_config)):
         new_config = basic_spec.migrate_config_file('/path/to/file',
@@ -392,7 +392,7 @@ def test_migrate_config_file_does_not_exist_do_not_create(basic_spec):
 
 @patch('os.path.isfile', Mock(return_value=False))
 def test_migrate_config_file_does_not_exist_create(basic_spec):
-    open_path = builtins_path + '.open'
+    open_path = 'yapconf.open'
     with patch(open_path, mock_open()):
         new_config = basic_spec.migrate_config_file('/path/to/file',
                                                     create=True)
@@ -402,19 +402,23 @@ def test_migrate_config_file_does_not_exist_create(basic_spec):
 
 @patch('os.path.isfile', Mock(return_value=False))
 def test_migrate_config_file_create_yaml(basic_spec):
-    open_path = builtins_path + '.open'
-    with patch('yaml.dump') as dump_mock:
+    open_path = 'yapconf.open'
+    with patch('yapconf.yaml.dump') as dump_mock:
         with patch(open_path, mock_open()) as mock_file:
             new_config = basic_spec.migrate_config_file(
                 '/path/to/file', create=True, output_file_type='yaml')
-            dump_mock.assert_called_with({"foo": None}, mock_file())
+            dump_mock.assert_called_with(
+                {"foo": None},
+                mock_file(),
+                default_flow_style=False,
+                encoding='utf-8')
 
     assert new_config == {"foo": None}
 
 
 @patch('os.path.isfile', Mock(return_value=True))
 def test_migrate_config_file_always_update(basic_spec):
-    open_path = builtins_path + '.open'
+    open_path = 'yapconf.open'
     current_config = '{"foo": "bar"}'
     with patch(open_path, mock_open(read_data=current_config)):
         new_config = basic_spec.migrate_config_file('/path/to/file',
@@ -428,7 +432,7 @@ def test_migrate_config_file_always_update(basic_spec):
 def test_migrate_config_file_update_previous_default():
     spec = YapconfSpec({'foo': {'default': 'baz',
                                 'previous_defaults': ['bar']}})
-    open_path = builtins_path + '.open'
+    open_path = 'yapconf.open'
     current_config = '{"foo": "bar"}'
     with patch(open_path, mock_open(read_data=current_config)):
         new_config = spec.migrate_config_file('/path/to/file',
@@ -610,7 +614,7 @@ previous_default_config = {
 ])
 def test_real_world_migrations(real_world_spec, current, expected,
                                always_update, update_defaults):
-    open_path = builtins_path + '.open'
+    open_path = 'yapconf.open'
     with patch(open_path, mock_open(read_data=json.dumps(current))):
         new_config = real_world_spec.migrate_config_file(
             'file', create=False, update_defaults=update_defaults,

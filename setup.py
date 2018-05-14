@@ -19,11 +19,12 @@ requirements = [
 test_requirements = [
     'pytest',
     'pytest-runner',
+    'pytest-lazy-fixture',
     'pytest-cov',
     'pluggy<0.7,>=0.5',
     'codecov',
     'mock',
-    'pyyaml',
+    'ruamel.yaml',
 ]
 
 setup(

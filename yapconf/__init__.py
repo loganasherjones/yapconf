@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """Top-level package for Yapconf."""
+import collections
 import json
 import re
 import sys
@@ -181,3 +182,28 @@ def _check_file_type(file_type, klazz):
     if str(file_type).lower() not in FILE_TYPES:
         raise klazz('Invalid file type %s. Valid file types are %s' %
                     (file_type, FILE_TYPES))
+
+
+def flatten(dictionary, separator='.', prefix=''):
+    """Flatten the dictionary keys are separated by separator
+
+    Arguments:
+        dictionary {dict} -- The dictionary to be flattened.
+
+    Keyword Arguments:
+        separator {str} -- The separator to use (default is '.'). It will
+        crush items with key conflicts.
+        prefix {str} -- Used for recursive calls.
+
+    Returns:
+        dict -- The flattened dictionary.
+    """
+
+    items = []
+    for key, value in dictionary.items():
+        new_key = prefix + separator + key if prefix else key
+        if isinstance(value, collections.MutableMapping):
+            items.extend(flatten(value, separator, new_key).items())
+        else:
+            items.append((new_key, value))
+    return dict(items)

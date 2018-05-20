@@ -107,3 +107,16 @@ def test_dump_data(tmpdir, data, file_type):
     filename = os.path.join(path.dirname, path.basename)
     yapconf.dump_data(data, filename, file_type)
     assert data == yapconf.load_file(filename, file_type)
+
+
+@pytest.mark.parametrize('original,expected', [
+    ({}, {}),
+    ({'foo': 'bar'}, {'foo': 'bar'}),
+    ({'foo': {'bar': 'baz'}}, {'foo.bar': 'baz'}),
+    (
+        {'foo': {'bar': {'baz': 'bat', 'bax': 'bat'}, 'bat': 'bar'}},
+        {'foo.bar.baz': 'bat', 'foo.bar.bax': 'bat', 'foo.bat': 'bar'}
+    )
+])
+def test_flatten(original, expected):
+    assert yapconf.flatten(original) == expected

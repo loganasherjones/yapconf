@@ -4,10 +4,12 @@ from argparse import ArgumentParser
 import pytest
 import sys
 
+import six
+
 from yapconf.exceptions import YapconfItemError, YapconfDictItemError, \
     YapconfListItemError, YapconfItemNotFound, YapconfValueError
 from yapconf.items import YapconfItem, YapconfDictItem, YapconfListItem, \
-    YapconfBoolItem
+    YapconfBoolItem, from_specification
 
 if sys.version_info > (3,):
     long = int
@@ -543,3 +545,31 @@ def test_basic_dict_get_config_value_from_env(db_item):
 def test_choices(item, config):
     with pytest.raises(YapconfValueError):
         item.get_config_value([('test', config)])
+
+
+def test_from_specification():
+    spec = {
+        'foo': {
+            'type': 'dict',
+            'required': True,
+            'items': {
+                'bar': {
+                    'type': 'dict',
+                    'required': True,
+                    'items': {
+                        'baz': {
+                            'type': 'str', 'required': True,
+                        },
+                    },
+                },
+                'bat': {
+                    'type': 'bool',
+                }
+            },
+        },
+    }
+    items = from_specification(spec)
+    assert items['foo'].fq_name == 'foo'
+    assert items['foo'].children['bar'].fq_name == 'foo.bar'
+    assert items['foo'].children['bar'].children['baz'].fq_name == 'foo.bar.baz'
+    assert items['foo'].children['bat'].fq_name == 'foo.bat'

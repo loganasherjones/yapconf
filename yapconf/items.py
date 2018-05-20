@@ -32,9 +32,12 @@ def from_specification(specification, env_prefix=None, separator='.',
     """
     items = {}
     for item_name, item_info in six.iteritems(specification):
-        names = parent_names or []
-        items[item_name] = _generate_item(item_name, item_info, env_prefix,
-                                          separator, names)
+        names = parent_names.copy() if parent_names else []
+        items[item_name] = _generate_item(item_name,
+                                          item_info,
+                                          env_prefix,
+                                          separator,
+                                          names)
     return items
 
 
@@ -307,7 +310,7 @@ class YapconfItem(object):
                     value = override[name]
                     break
         else:
-            value = override[self.name]
+            value = override[self.fq_name]
 
         if value is None:
             return value
@@ -415,9 +418,9 @@ class YapconfItem(object):
                         self.logger.info('Found config value for {0} in {1}'
                                          .format(self.name, label))
                         return label, info
-            elif self.name in info and info[self.name] is not None:
+            elif self.fq_name in info and info[self.fq_name] is not None:
                 self.logger.info('Found config value for {0} in {1}'
-                                 .format(self.name, label))
+                                 .format(self.fq_name, label))
                 return label, info
 
         return None, None
@@ -700,7 +703,7 @@ class YapconfListItem(YapconfItem):
         if override is None:
             values = self.default
         else:
-            values = override[self.name]
+            values = override[self.fq_name]
 
         if values is None:
             return None
@@ -846,10 +849,8 @@ class YapconfDictItem(YapconfItem):
                 child.add_argument(parser, bootstrap)
 
     def get_config_value(self, overrides):
-        nested_overrides = self._find_all_overrides(overrides)
-
         converted_value = {
-            child_name: child_item.get_config_value(nested_overrides)
+            child_name: child_item.get_config_value(overrides)
             for child_name, child_item in six.iteritems(self.children)
         }
         self._validate_value(converted_value)

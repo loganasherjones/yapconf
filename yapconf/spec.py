@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-import json
 import six
 import os
-import sys
 
 from box import Box
 
@@ -11,9 +9,6 @@ import yapconf
 from yapconf.exceptions import YapconfSpecError, YapconfLoadError, \
     YapconfItemNotFound
 from yapconf.items import from_specification
-
-if sys.version_info.major < 3:
-    from io import open
 
 
 class YapconfSpec(object):
@@ -64,9 +59,9 @@ class YapconfSpec(object):
 
     def _load_specification(self, specification):
         if isinstance(specification, six.string_types):
-            specification = self._load_file_to_dict(specification,
-                                                    self._file_type,
-                                                    YapconfSpecError)
+            specification = yapconf.load_file(specification,
+                                              file_type=self._file_type,
+                                              klazz=YapconfSpecError)
 
         if not isinstance(specification, dict):
             raise YapconfSpecError('Specification must be a dictionary or a '
@@ -272,8 +267,10 @@ class YapconfSpec(object):
                                 always_update, update_defaults)
 
         if create:
-            self._write_dict_to_file(migrated_config, output_file_name,
-                                     output_file_type)
+            yapconf.dump_data(migrated_config,
+                              filename=output_file_name,
+                              file_type=output_file_type,
+                              klazz=YapconfLoadError)
 
         return Box(migrated_config)
 
@@ -285,9 +282,10 @@ class YapconfSpec(object):
                                    "File does not exist. If you would like "
                                    "to create the file, you need to pass "
                                    "the create flag.".format(config_file_path))
-        else:
-            return self._load_file_to_dict(config_file_path,
-                                           file_type, YapconfLoadError)
+
+        return yapconf.load_file(config_file_path,
+                                 file_type=file_type,
+                                 klazz=YapconfLoadError)
 
     def _get_items(self, bootstrap):
         if not bootstrap:
@@ -346,9 +344,9 @@ class YapconfSpec(object):
             if unpacked_value == 'ENVIRONMENT':
                 override_dict = os.environ.copy()
             else:
-                override_dict = self._load_file_to_dict(unpacked_value,
-                                                        file_type,
-                                                        YapconfLoadError)
+                override_dict = yapconf.load_file(unpacked_value,
+                                                  file_type=file_type,
+                                                  klazz=YapconfLoadError)
         elif isinstance(unpacked_value, dict):
             label = label or "dict-{0}".format(index)
             override_dict = unpacked_value
@@ -358,45 +356,4 @@ class YapconfSpec(object):
                                    "must be either a dictionary or a filename."
                                    .format(unpacked_value))
 
-        return label, override_dict
-
-    def _write_dict_to_file(self, dictionary, filename, file_type):
-        self._logger.debug("Writing config: {0}".format(dictionary))
-        self._logger.debug("To ({0}) file: {1}".format(file_type, filename))
-
-        if file_type == 'yaml' and not yapconf.yaml_support:
-            raise YapconfLoadError('Cannot output a YAML file because the '
-                                   'yaml module was not loaded. Please '
-                                   'install either PyYaml or ruamel.yaml')
-        elif file_type not in yapconf.FILE_TYPES:
-            raise YapconfLoadError('Unsupported file type: {0}'
-                                   .format(file_type))
-
-        with open(filename, 'w', encoding=self._encoding) as conf_file:
-            if file_type == 'json':
-                dumped = json.dumps(dictionary, sort_keys=True, indent=4)
-                conf_file.write(six.u(dumped))
-            elif file_type == 'yaml':
-                yapconf.yaml.dump(dictionary, conf_file)
-
-    def _load_file_to_dict(self, filename, file_type, exc_clazz):
-        # Loads file, validates that the file, after loading is a dict
-        data = None
-
-        if file_type == 'yaml' and not yapconf.yaml_support:
-            raise exc_clazz('You wanted to load a YAML file but '
-                            'the yaml module was not loaded. Please '
-                            'install either PyYaml or ruamel.yaml')
-        elif file_type not in yapconf.FILE_TYPES:
-            raise exc_clazz('Unsupported file type: {0}'.format(file_type))
-
-        with open(filename, encoding=self._encoding) as conf_file:
-            if file_type == 'json':
-                data = json.load(conf_file)
-            elif file_type == 'yaml':
-                data = yapconf.yaml.load(conf_file.read())
-
-        if not isinstance(data, dict):
-            raise exc_clazz("File: {0} when parsed did not result "
-                            "in a dictionary.".format(filename))
-        return data
+        return label, yapconf.flatten(override_dict)

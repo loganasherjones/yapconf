@@ -1,0 +1,8 @@
+{
+    "foo": "bar",
+    "db": {
+        "name": "db_name",
+        "port": 123
+    },
+    "items": [1, 2, 3]
+}

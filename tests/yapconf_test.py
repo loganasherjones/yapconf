@@ -116,6 +116,70 @@ def test_dump_data(tmpdir, data, file_type):
     (
         {'foo': {'bar': {'baz': 'bat', 'bax': 'bat'}, 'bat': 'bar'}},
         {'foo.bar.baz': 'bat', 'foo.bar.bax': 'bat', 'foo.bat': 'bar'}
+    ),
+    (
+        {
+            'list': [
+                {'foo': 'foo_value', 'bar': 'bar_value'},
+                {'foo': 'foo_value2', 'bar': 'bar_value2'},
+            ]
+        },
+        {
+            'list': [
+                {'list.foo': 'foo_value', 'list.bar': 'bar_value'},
+                {'list.foo': 'foo_value2', 'list.bar': 'bar_value2'}
+            ]
+        }
+    ),
+    (
+        {
+            'foo': {'list1': [1], 'list2': [{'bar': 'baz'}]}
+        },
+        {
+            'foo.list1': [1], 'foo.list2': [{'foo.list2.bar': 'baz'}]
+        }
+    ),
+    (
+        {
+            'foo': {
+                'list1': [
+                    {
+                        'bar': {
+                            'list2': [1, 2, 3],
+                            'bar2': 'bar2_value',
+                            'bat': {
+                                'bat2': 'bat2_value',
+                                'bat_list_dict': [
+                                    {
+                                        'baz': 'baz_value',
+                                        'bazl': [4, 5, 6],
+                                        'bazd': {'bazd_key': 'bazd_value'}
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            'foo.list1': [
+                {
+                    'foo.list1.bar.list2': [1, 2, 3],
+                    'foo.list1.bar.bar2': 'bar2_value',
+                    'foo.list1.bar.bat.bat2': 'bat2_value',
+                    'foo.list1.bar.bat.bat_list_dict': [
+                        {
+                            'foo.list1.bar.bat.bat_list_dict.baz': 'baz_value',
+                            'foo.list1.bar.bat.bat_list_dict.bazl': [4, 5, 6],
+                            'foo.list1.bar.bat.bat_list_dict.bazd.bazd_key':
+                                'bazd_value'
+                        }
+                    ]
+
+                }
+            ]
+        }
     )
 ])
 def test_flatten(original, expected):

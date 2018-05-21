@@ -4,8 +4,7 @@ from argparse import ArgumentParser
 import pytest
 import sys
 
-import six
-
+import yapconf
 from yapconf.exceptions import YapconfItemError, YapconfDictItemError, \
     YapconfListItemError, YapconfItemNotFound, YapconfValueError
 from yapconf.items import YapconfItem, YapconfDictItem, YapconfListItem, \
@@ -13,106 +12,6 @@ from yapconf.items import YapconfItem, YapconfDictItem, YapconfListItem, \
 
 if sys.version_info > (3,):
     long = int
-
-
-@pytest.fixture
-def simple_item():
-    return YapconfItem(
-        name='foo',
-        required=True
-    )
-
-
-@pytest.fixture
-def unformatted_item():
-    return YapconfItem(
-        name='weirdName-Cool_stuff lol',
-        required=True,
-        format_env=False,
-        format_cli=False
-    )
-
-
-@pytest.fixture
-def unformatted_bool_item():
-    return YapconfBoolItem(
-        name='weirdName-Cool_stuff lol',
-        required=True,
-        format_env=False,
-        format_cli=False
-    )
-
-
-@pytest.fixture
-def list_item():
-    return YapconfListItem(
-        name='foos',
-        required=True,
-        children={'simple_item': simple_item()}
-    )
-
-
-@pytest.fixture
-def bool_list_item():
-    return YapconfListItem(
-        name='my_bools',
-        required=True,
-        children={'bool_item': bool_item()}
-    )
-
-
-@pytest.fixture
-def db_item():
-    db_name_item = YapconfItem(name='name', required=True, prefix='db',
-                               alt_env_names=['ALT_NAME'])
-    log_level_item = YapconfItem(name='level', required=True, prefix='db.log')
-    log_file_item = YapconfItem(name='file', required=True, prefix='db.log')
-    db_user_item = YapconfItem(name='user', required=True, prefix='db')
-    db_port_item = YapconfItem(name='port', item_type='int',
-                               required=True, prefix='db')
-
-    db_verbose_item = YapconfBoolItem(name='verbose', required=True,
-                                      prefix='db', item_type='bool')
-    db_users_item = YapconfListItem(name='users', required=True,
-                                    prefix='db', item_type='list',
-                                    children={
-                                        'user': db_user_item
-                                    })
-    db_logging = YapconfDictItem(name='log', required=True,
-                                 children={
-                                     'level': log_level_item,
-                                     'file': log_file_item,
-                                 })
-
-    return YapconfDictItem(
-        name='db',
-        required=True,
-        children={
-            'name': db_name_item,
-            'port': db_port_item,
-            'verbose': db_verbose_item,
-            'users': db_users_item,
-            'log': db_logging,
-        }
-    )
-
-
-@pytest.fixture
-def dict_item():
-    return YapconfDictItem(
-        name='foo_dict',
-        required=True,
-        children={'foo': simple_item()}
-    )
-
-
-@pytest.fixture
-def bool_item():
-    return YapconfBoolItem(
-        name='my_bool',
-        required=True,
-        default=True
-    )
 
 
 @pytest.mark.parametrize('clazz,kwargs,env_names', [
@@ -134,12 +33,17 @@ def bool_item():
     ),
     (
         YapconfListItem,
-        {'name': 'foos', 'env_name': 'FOOS', 'alt_env_names': ['BARS'],
-         'children': {'foo': simple_item()}},
+        {
+            'name': 'foos',
+            'env_name': 'FOOS',
+            'alt_env_names': ['BARS'],
+            'children': {'foo': YapconfItem('foo')}
+        },
         []
     )
 ])
 def test_env_names(clazz, kwargs, env_names):
+    item = clazz(**kwargs)
     item = clazz(**kwargs)
     assert item.all_env_names == env_names
 
@@ -172,14 +76,21 @@ def test_env_names(clazz, kwargs, env_names):
     ),
     (
         YapconfDictItem,
-        {'name': 'foo', 'children': {'item1': simple_item()},
-         'choices': [{'foo': 'bar'}]},
+        {
+            'name': 'foo',
+            'children': {'item1': YapconfItem('simple_item')},
+            'choices': [{'foo': 'bar'}]
+        },
         YapconfDictItemError
     ),
     (
         YapconfListItem,
-        {'name': 'foo', 'children': {'item1': simple_item(),
-                                     'item2': bool_item()}},
+        {
+            'name': 'foo',
+            'children': {
+                'item1': YapconfItem('simple_item'),
+                'item2': YapconfBoolItem('my_bool')}
+        },
         YapconfListItemError
     )
 ])
@@ -326,17 +237,10 @@ def test_get_config_ignore_environment(list_item):
     assert value == ['foo3', 'foo4']
 
 
-def test_dict_get_config_invalid_sub_item(dict_item):
-    with pytest.raises(YapconfValueError):
-        dict_item.get_config_value([
-            ('label1', {'foo_dict': 'THIS SHOULD BE A DICT'})
-        ])
-
-
 def test_dict_get_config_value(dict_item):
     value = dict_item.get_config_value(
         [
-            ('label1', {'foo_dict': {'foo': 'bar'}})
+            ('label1', yapconf.flatten({'foo_dict': {'foo': 'bar'}}))
         ]
     )
     assert value == {'foo': 'bar'}
@@ -346,7 +250,7 @@ def test_dict_get_config_value_ignore_environment(dict_item):
     dict_item.env_name = 'FOO_DICT'
     value = dict_item.get_config_value([
         ('ENVIRONMENT', {'FOO_DICT': {'foo': 'bar'}}),
-        ('label1', {'foo_dict': {'foo': 'baz'}})
+        ('label1', yapconf.flatten({'foo_dict': {'foo': 'baz'}}))
     ])
     assert value == {'foo': 'baz'}
 
@@ -496,16 +400,23 @@ def test_basic_dict_add_argument(db_item,
 def test_basic_dict_get_config_value_from_env(db_item):
     value = db_item.get_config_value(
         [
-            ('ENVIRONMENT',
-             {'ALT_NAME': 'db_name', 'DB_PORT': '1234',
-              'DB_VERBOSE': 'True'}
-             ),
-            ('dict1',
-             {'db': {'users': ['user1', 'user2'],
-                     'log': {'level': 'INFO', 'file': '/some/file'}
-                     }
-              }
-             )
+            (
+                'ENVIRONMENT',
+                {
+                    'ALT_NAME': 'db_name',
+                    'DB_PORT': '1234',
+                    'DB_VERBOSE': 'True'
+                }
+            ),
+            (
+                'dict1',
+                yapconf.flatten({
+                    'db': {
+                        'users': ['user1', 'user2'],
+                        'log': {'level': 'INFO', 'file': '/some/file'}
+                    }
+                })
+            )
         ]
     )
     assert value['name'] == 'db_name'
@@ -537,9 +448,11 @@ def test_basic_dict_get_config_value_from_env(db_item):
     (
         YapconfDictItem("foo_dict",
                         children={
-                            "foo": YapconfItem('foo', choices=['bar', 'baz'])
+                            "foo": YapconfItem('foo',
+                                               choices=['bar', 'baz'],
+                                               prefix='foo_dict')
                         }),
-        {'foo_dict': {'foo': 'invalid'}}
+        yapconf.flatten({'foo_dict': {'foo': 'invalid'}})
     ),
 ])
 def test_choices(item, config):
@@ -547,7 +460,48 @@ def test_choices(item, config):
         item.get_config_value([('test', config)])
 
 
-def test_from_specification():
+def test_from_spec_list_fq_names():
+    spec = {
+        'list1': {
+            'type': 'list',
+            'required': True,
+            'items': {
+                'list_item': {
+                    'type': 'str',
+                    'required': True
+                },
+            },
+        },
+        'list2': {
+            'type': 'list',
+            'required': True,
+            'items': {
+                'list_dict_item': {
+                    'type': 'dict',
+                    'required': True,
+                    'items': {
+                        'foo': {},
+                        'bar': {},
+                    },
+                },
+            },
+        },
+    }
+    items = from_specification(spec)
+    assert items['list1'].fq_name == 'list1'
+    assert items['list1'].children['list1'].fq_name == 'list1'
+    assert items['list2'].children['list2'].fq_name == 'list2'
+    assert (
+        items['list2'].children['list2'].children['foo'].fq_name ==
+        'list2.foo'
+    )
+    assert (
+        items['list2'].children['list2'].children['bar'].fq_name ==
+        'list2.bar'
+    )
+
+
+def test_from_specification_check_fq_names():
     spec = {
         'foo': {
             'type': 'dict',
@@ -571,5 +525,7 @@ def test_from_specification():
     items = from_specification(spec)
     assert items['foo'].fq_name == 'foo'
     assert items['foo'].children['bar'].fq_name == 'foo.bar'
-    assert items['foo'].children['bar'].children['baz'].fq_name == 'foo.bar.baz'
+    assert (
+        items['foo'].children['bar'].children['baz'].fq_name == 'foo.bar.baz'
+    )
     assert items['foo'].children['bat'].fq_name == 'foo.bat'

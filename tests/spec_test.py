@@ -257,8 +257,15 @@ def test_load_list_config(spec_with_lists):
 def test_nested_load_config(spec_with_dicts):
     config = spec_with_dicts.load_config(
         {
-            'database': {'name': 'dbname', 'host': 'dbhost', 'port': 1234},
-            'foo': {'bar': {'baz': 'baz_value'}, 'bat': True}
+            'database': {
+                'name': 'dbname',
+                'host': 'dbhost',
+                'port': 1234
+            },
+            'foo': {
+                'bar': {'baz': 'baz_value'},
+                'bat': True
+            }
         }
     )
     assert config['database']['name'] == 'dbname'

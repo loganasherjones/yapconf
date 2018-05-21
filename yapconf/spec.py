@@ -356,4 +356,4 @@ class YapconfSpec(object):
                                    "must be either a dictionary or a filename."
                                    .format(unpacked_value))
 
-        return label, override_dict
+        return label, yapconf.flatten(override_dict)

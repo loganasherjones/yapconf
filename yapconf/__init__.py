@@ -198,12 +198,22 @@ def flatten(dictionary, separator='.', prefix=''):
     Returns:
         dict -- The flattened dictionary.
     """
-
-    items = []
+    new_dict = {}
     for key, value in dictionary.items():
         new_key = prefix + separator + key if prefix else key
         if isinstance(value, collections.MutableMapping):
-            items.extend(flatten(value, separator, new_key).items())
+            new_dict.update(flatten(value, separator, new_key))
+
+        elif isinstance(value, list):
+            new_value = []
+            for item in value:
+                if isinstance(item, collections.MutableMapping):
+                    new_value.append(flatten(item, separator, new_key))
+                else:
+                    new_value.append(item)
+            new_dict[new_key] = new_value
+
         else:
-            items.append((new_key, value))
-    return dict(items)
+            new_dict[new_key] = value
+
+    return new_dict

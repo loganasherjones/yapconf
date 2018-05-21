@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import logging
 import sys
 
@@ -32,7 +33,7 @@ def from_specification(specification, env_prefix=None, separator='.',
     """
     items = {}
     for item_name, item_info in six.iteritems(specification):
-        names = parent_names.copy() if parent_names else []
+        names = copy.copy(parent_names) if parent_names else []
         items[item_name] = _generate_item(item_name,
                                           item_info,
                                           env_prefix,
@@ -49,11 +50,19 @@ def _get_item_cli_choices(item_type, item_dict):
 
 
 def _get_item_children(item_name, item_dict, env_prefix,
-                       parent_names, separator):
+                       parent_names, separator, item_type):
     if item_dict.get('items'):
-        parent_names.append(item_name)
+        if item_type == 'list':
+            # List items are only allowed one child. This
+            # child name is unused, so we just use the list
+            # name. This helps the flattening process stay sane.
+            child_key = list(item_dict['items'].keys())[0]
+            child_items = {item_name: item_dict['items'][child_key]}
+        else:
+            child_items = item_dict['items']
+            parent_names.append(item_name)
 
-        return from_specification(item_dict['items'],
+        return from_specification(child_items,
                                   env_prefix=env_prefix,
                                   separator=separator,
                                   parent_names=parent_names)
@@ -93,7 +102,8 @@ def _generate_item(name, item_dict, env_prefix,
                                                item_dict=item_dict,
                                                env_prefix=env_prefix,
                                                parent_names=parent_names,
-                                               separator=separator)
+                                               separator=separator,
+                                               item_type=item_type)
 
     if item_type == 'dict':
         return YapconfDictItem(**init_args)
@@ -293,7 +303,7 @@ class YapconfItem(object):
 
         if override is None and self.default is None and self.required:
             raise YapconfItemNotFound('Could not find config value for {0}'
-                                      .format(self.name), self)
+                                      .format(self.fq_name), self)
 
         if override is None:
             self.logger.info('Config value not found for {0}, falling back '
@@ -698,7 +708,7 @@ class YapconfListItem(YapconfItem):
 
         if override is None and self.default is None and self.required:
             raise YapconfItemNotFound('Could not find config value for {0}'
-                                      .format(self.name), self)
+                                      .format(self.fq_name), self)
 
         if override is None:
             values = self.default

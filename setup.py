@@ -12,20 +12,30 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'six',
-    'python-box',
+    'six<2',
+    'python-box<4',
 ]
 
-test_requirements = [
-    'pytest',
-    'pytest-runner',
-    'pytest-lazy-fixture',
-    'pytest-cov',
-    'pluggy<0.7,>=0.5',
-    'codecov',
-    'mock',
-    'ruamel.yaml',
-]
+extras = {
+    'docs': [
+        'sphinx',
+        'sphinx_rtd_theme',
+    ],
+    'test': [
+        'codecov',
+        'coverage',
+        'flake8',
+        'funcsigs',
+        'mock',
+        'pluggy<0.7,>=0.5',
+        'pytest',
+        'pytest-lazy-fixture',
+        'pytest-cov',
+        'pytest-runner',
+        'ruamel.yaml',
+        'tox',
+    ]
+}
 
 setup(
     name='yapconf',
@@ -55,5 +65,6 @@ setup(
         'Programming Language :: Python :: 3.6'
     ],
     test_suite='tests',
-    tests_require=test_requirements,
+    tests_require=extras['test'],
+    extras_require=extras,
 )

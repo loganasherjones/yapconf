@@ -79,6 +79,7 @@ def _generate_item(name, item_dict, env_prefix,
     init_args['bootstrap'] = item_dict.get('bootstrap', False)
     init_args['default'] = item_dict.get('default')
     init_args['description'] = item_dict.get('description')
+    init_args['long_description'] = item_dict.get('long_description')
     init_args['required'] = item_dict.get('required', True)
     init_args['cli_short_name'] = item_dict.get('cli_short_name')
     init_args['previous_names'] = item_dict.get('previous_names')
@@ -166,19 +167,37 @@ class YapconfItem(object):
             initialization results in an invalid item.
     """
 
-    def __init__(self, name, item_type='str',
-                 default=None, env_name=None,
-                 description=None, required=True, cli_short_name=None,
-                 cli_choices=None, previous_names=None, previous_defaults=None,
-                 children=None, cli_expose=True, separator='.', prefix=None,
-                 bootstrap=False, format_cli=True, format_env=True,
-                 env_prefix=None, apply_env_prefix=True, choices=None,
-                 alt_env_names=None):
+    def __init__(
+        self,
+        name,
+        item_type='str',
+        default=None,
+        env_name=None,
+        description=None,
+        required=True,
+        cli_short_name=None,
+        cli_choices=None,
+        previous_names=None,
+        previous_defaults=None,
+        children=None,
+        cli_expose=True,
+        separator='.',
+        prefix=None,
+        bootstrap=False,
+        format_cli=True,
+        format_env=True,
+        env_prefix=None,
+        apply_env_prefix=True,
+        choices=None,
+        alt_env_names=None,
+        long_description=None
+    ):
 
         self.name = name
         self.item_type = item_type
         self.default = default
         self.description = description
+        self.long_description = long_description
         self.required = required
         self.cli_short_name = cli_short_name
         self.cli_choices = cli_choices or []
@@ -553,19 +572,55 @@ class YapconfBoolItem(YapconfItem):
     # Values to interpret as False (not case sensitive)
     FALSY_VALUES = ('n', 'no', 'f', 'false', '0', 0, False, )
 
-    def __init__(self, name, item_type='bool',
-                 default=None, env_name=None,
-                 description=None, required=True, cli_short_name=None,
-                 cli_choices=None, previous_names=None, previous_defaults=None,
-                 children=None, cli_expose=True, separator='.', prefix=None,
-                 bootstrap=False, format_cli=True, format_env=True,
-                 env_prefix=None, apply_env_prefix=True, choices=None,
-                 alt_env_names=None):
+    def __init__(
+        self,
+        name,
+        item_type='bool',
+        default=None,
+        env_name=None,
+        description=None,
+        required=True,
+        cli_short_name=None,
+        cli_choices=None,
+        previous_names=None,
+        previous_defaults=None,
+        children=None,
+        cli_expose=True,
+        separator='.',
+        prefix=None,
+        bootstrap=False,
+        format_cli=True,
+        format_env=True,
+        env_prefix=None,
+        apply_env_prefix=True,
+        choices=None,
+        alt_env_names=None,
+        long_description=None
+    ):
         super(YapconfBoolItem, self).__init__(
-            name, item_type, default, env_name, description, required,
-            cli_short_name, cli_choices, previous_names, previous_defaults,
-            children, cli_expose, separator, prefix, bootstrap, format_cli,
-            format_env, env_prefix, apply_env_prefix, choices, alt_env_names)
+            name,
+            item_type,
+            default,
+            env_name,
+            description,
+            required,
+            cli_short_name,
+            cli_choices,
+            previous_names,
+            previous_defaults,
+            children,
+            cli_expose,
+            separator,
+            prefix,
+            bootstrap,
+            format_cli,
+            format_env,
+            env_prefix,
+            apply_env_prefix,
+            choices,
+            alt_env_names,
+            long_description
+        )
 
     def add_argument(self, parser, bootstrap=False):
         """Add boolean item as an argument to the given parser.
@@ -670,19 +725,56 @@ class YapconfBoolItem(YapconfItem):
 class YapconfListItem(YapconfItem):
     """A YapconfItem for capture list-specific behavior"""
 
-    def __init__(self, name, item_type='list', default=None, env_name=None,
-                 description=None, required=True, cli_short_name=None,
-                 cli_choices=None, previous_names=None, previous_defaults=None,
-                 children=None, cli_expose=True, separator='.', prefix=None,
-                 bootstrap=False, format_cli=True, format_env=True,
-                 env_prefix=None, apply_env_prefix=True, choices=None,
-                 alt_env_names=None):
+    def __init__(
+        self,
+        name,
+        item_type='list',
+        default=None,
+        env_name=None,
+        description=None,
+        required=True,
+        cli_short_name=None,
+        cli_choices=None,
+        previous_names=None,
+        previous_defaults=None,
+        children=None,
+        cli_expose=True,
+        separator='.',
+        prefix=None,
+        bootstrap=False,
+        format_cli=True,
+        format_env=True,
+        env_prefix=None,
+        apply_env_prefix=True,
+        choices=None,
+        alt_env_names=None,
+        long_description=None
+    ):
 
         super(YapconfListItem, self).__init__(
-            name, item_type, default, env_name, description, required,
-            cli_short_name, cli_choices, previous_names, previous_defaults,
-            children, cli_expose, separator, prefix, bootstrap, format_cli,
-            format_env, env_prefix, apply_env_prefix, choices, alt_env_names)
+            name,
+            item_type,
+            default,
+            env_name,
+            description,
+            required,
+            cli_short_name,
+            cli_choices,
+            previous_names,
+            previous_defaults,
+            children,
+            cli_expose,
+            separator,
+            prefix,
+            bootstrap,
+            format_cli,
+            format_env,
+            env_prefix,
+            apply_env_prefix,
+            choices,
+            alt_env_names,
+            long_description
+        )
 
         if len(self.children) != 1:
             raise YapconfListItemError("List Items can only have a "
@@ -801,20 +893,56 @@ class YapconfListItem(YapconfItem):
 class YapconfDictItem(YapconfItem):
     """A YapconfItem for capture dict-specific behavior"""
 
-    def __init__(self, name, item_type='dict',
-                 default=None, env_name=None,
-                 description=None, required=True, cli_short_name=None,
-                 cli_choices=None, previous_names=None, previous_defaults=None,
-                 children=None, cli_expose=True, separator='.', prefix=None,
-                 bootstrap=False, format_cli=True, format_env=True,
-                 env_prefix=None, apply_env_prefix=True, choices=None,
-                 alt_env_names=None):
+    def __init__(
+        self,
+        name,
+        item_type='dict',
+        default=None,
+        env_name=None,
+        description=None,
+        required=True,
+        cli_short_name=None,
+        cli_choices=None,
+        previous_names=None,
+        previous_defaults=None,
+        children=None,
+        cli_expose=True,
+        separator='.',
+        prefix=None,
+        bootstrap=False,
+        format_cli=True,
+        format_env=True,
+        env_prefix=None,
+        apply_env_prefix=True,
+        choices=None,
+        alt_env_names=None,
+        long_description=None
+    ):
 
         super(YapconfDictItem, self).__init__(
-            name, item_type, default, env_name, description, required,
-            cli_short_name, cli_choices, previous_names, previous_defaults,
-            children, cli_expose, separator, prefix, bootstrap, format_cli,
-            format_env, env_prefix, apply_env_prefix, choices, alt_env_names)
+            name,
+            item_type,
+            default,
+            env_name,
+            description,
+            required,
+            cli_short_name,
+            cli_choices,
+            previous_names,
+            previous_defaults,
+            children,
+            cli_expose,
+            separator,
+            prefix,
+            bootstrap,
+            format_cli,
+            format_env,
+            env_prefix,
+            apply_env_prefix,
+            choices,
+            alt_env_names,
+            long_description
+        )
 
         if self.choices is not None:
             raise YapconfDictItemError('Dict items {0} cannot have choices '

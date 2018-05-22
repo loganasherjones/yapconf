@@ -331,9 +331,9 @@ class YapconfItem(object):
 
     def _validate_value(self, value):
         if self.choices and value not in self.choices:
-            raise YapconfValueError("Invalid value provided (%s)."
+            raise YapconfValueError("Invalid value provided (%s) for %s."
                                     "Valid values are %s" %
-                                    (value, self.choices))
+                                    (value, self.fq_name, self.choices))
 
     def convert_config_value(self, value, label):
         try:

@@ -39,7 +39,7 @@ extras = {
 
 setup(
     name='yapconf',
-    version='0.2.3',
+    version='0.2.4',
     description="Yet Another Python Configuration",
     long_description=readme + '\n\n' + history,
     author="Logan Asher Jones",

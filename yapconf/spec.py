@@ -201,13 +201,17 @@ class YapconfSpec(object):
         config = self._generate_config_from_overrides(overrides, bootstrap)
         return Box(config)
 
-    def migrate_config_file(self, config_file_path,
-                            always_update=False,
-                            current_file_type=None,
-                            output_file_name=None,
-                            output_file_type=None,
-                            create=True,
-                            update_defaults=True):
+    def migrate_config_file(
+        self,
+        config_file_path,
+        always_update=False,
+        current_file_type=None,
+        output_file_name=None,
+        output_file_type=None,
+        create=True,
+        update_defaults=True,
+        dump_kwargs=None,
+    ):
         """Migrates a configuration file.
 
         This is used to help you update your configurations throughout the
@@ -248,6 +252,7 @@ class YapconfSpec(object):
                 error if the file does not exist).
             update_defaults (bool): Update values that have a value set to
                 something listed in the previous_defaults
+            dump_kwargs (dict): A key-value pair that will be passed to dump
 
         Returns:
             box.Box: The newly migrated configuration.
@@ -270,7 +275,8 @@ class YapconfSpec(object):
             yapconf.dump_data(migrated_config,
                               filename=output_file_name,
                               file_type=output_file_type,
-                              klazz=YapconfLoadError)
+                              klazz=YapconfLoadError,
+                              dump_kwargs=dump_kwargs)
 
         return Box(migrated_config)
 

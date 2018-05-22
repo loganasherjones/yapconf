@@ -92,6 +92,7 @@ def _generate_item(name, item_dict, env_prefix,
     init_args['env_prefix'] = env_prefix
     init_args['choices'] = item_dict.get('choices', None)
     init_args['alt_env_names'] = item_dict.get('alt_env_names', [])
+    init_args['validator'] = item_dict.get('validator')
 
     if parent_names:
         init_args['prefix'] = separator.join(parent_names)
@@ -190,7 +191,8 @@ class YapconfItem(object):
         apply_env_prefix=True,
         choices=None,
         alt_env_names=None,
-        long_description=None
+        long_description=None,
+        validator=None
     ):
 
         self.name = name
@@ -213,6 +215,7 @@ class YapconfItem(object):
         self.env_prefix = env_prefix or ''
         self.apply_env_prefix = apply_env_prefix
         self.choices = choices
+        self.validator = validator
 
         if self.prefix:
             self.fq_name = self.separator.join([self.prefix, self.name])
@@ -353,6 +356,9 @@ class YapconfItem(object):
             raise YapconfValueError("Invalid value provided (%s) for %s."
                                     "Valid values are %s" %
                                     (value, self.fq_name, self.choices))
+        if self.validator and not self.validator(value):
+            raise YapconfValueError('Invalid value provided (%s) for %s.' %
+                                    (value, self.fq_name))
 
     def convert_config_value(self, value, label):
         try:
@@ -595,7 +601,8 @@ class YapconfBoolItem(YapconfItem):
         apply_env_prefix=True,
         choices=None,
         alt_env_names=None,
-        long_description=None
+        long_description=None,
+        validator=None
     ):
         super(YapconfBoolItem, self).__init__(
             name,
@@ -619,7 +626,8 @@ class YapconfBoolItem(YapconfItem):
             apply_env_prefix,
             choices,
             alt_env_names,
-            long_description
+            long_description,
+            validator
         )
 
     def add_argument(self, parser, bootstrap=False):
@@ -748,7 +756,8 @@ class YapconfListItem(YapconfItem):
         apply_env_prefix=True,
         choices=None,
         alt_env_names=None,
-        long_description=None
+        long_description=None,
+        validator=None
     ):
 
         super(YapconfListItem, self).__init__(
@@ -773,7 +782,8 @@ class YapconfListItem(YapconfItem):
             apply_env_prefix,
             choices,
             alt_env_names,
-            long_description
+            long_description,
+            validator
         )
 
         if len(self.children) != 1:
@@ -916,7 +926,8 @@ class YapconfDictItem(YapconfItem):
         apply_env_prefix=True,
         choices=None,
         alt_env_names=None,
-        long_description=None
+        long_description=None,
+        validator=None
     ):
 
         super(YapconfDictItem, self).__init__(
@@ -941,7 +952,8 @@ class YapconfDictItem(YapconfItem):
             apply_env_prefix,
             choices,
             alt_env_names,
-            long_description
+            long_description,
+            validator
         )
 
         if self.choices is not None:

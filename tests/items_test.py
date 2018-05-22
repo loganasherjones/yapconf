@@ -529,3 +529,11 @@ def test_from_specification_check_fq_names():
         items['foo'].children['bar'].children['baz'].fq_name == 'foo.bar.baz'
     )
     assert items['foo'].children['bat'].fq_name == 'foo.bat'
+
+
+def test_invalid_value():
+    def always_invalid(value):
+        return False
+    item = from_specification({'foo': {'validator': always_invalid}})['foo']
+    with pytest.raises(YapconfValueError):
+        item.get_config_value([('label', {'foo': 'bar'})])

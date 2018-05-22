@@ -17,6 +17,10 @@ requirements = [
 ]
 
 extras = {
+    'deploy': [
+        'wheel',
+        'twine',
+    ],
     'docs': [
         'sphinx',
         'sphinx_rtd_theme',

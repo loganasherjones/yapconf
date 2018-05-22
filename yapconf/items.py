@@ -511,14 +511,6 @@ class YapconfItem(object):
             raise YapconfItemError("Do not know how to generate CLI "
                                    "type for {0}".format(self.item_type))
 
-    def _get_argparse_required(self, bootstrap):
-        if bootstrap is True and not self.bootstrap:
-            return False
-        elif self.default is None:
-            return self.required
-        else:
-            return False
-
     def _get_argparse_choices(self):
         return self.cli_choices or None
 
@@ -540,7 +532,7 @@ class YapconfItem(object):
             'default': None,
             'type': self._get_argparse_type(),
             'choices': self._get_argparse_choices(),
-            'required': self._get_argparse_required(bootstrap),
+            'required': False,
             'help': self.description,
             'dest': self.fq_name,
         }
@@ -662,7 +654,7 @@ class YapconfBoolItem(YapconfItem):
         kwargs = {
             'action': self._get_argparse_action(),
             'default': None,
-            'required': self._get_argparse_required(bootstrap),
+            'required': False,
             'help': self.description,
             'dest': self.fq_name,
         }

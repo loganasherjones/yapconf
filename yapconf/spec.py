@@ -261,6 +261,7 @@ class YapconfSpec(object):
         create=True,
         update_defaults=True,
         dump_kwargs=None,
+        include_bootstrap=True,
     ):
         """Migrates a configuration file.
 
@@ -303,6 +304,7 @@ class YapconfSpec(object):
             update_defaults (bool): Update values that have a value set to
                 something listed in the previous_defaults
             dump_kwargs (dict): A key-value pair that will be passed to dump
+            include_bootstrap (bool): Include bootstrap items in the output
 
         Returns:
             box.Box: The newly migrated configuration.
@@ -317,7 +319,15 @@ class YapconfSpec(object):
                                                     current_file_type)
 
         migrated_config = {}
-        for item in self._yapconf_items.values():
+
+        if include_bootstrap:
+            items = self._yapconf_items.values()
+        else:
+            items = [
+                item for item in self._yapconf_items.values()
+                if not item.bootstrap
+            ]
+        for item in items:
             item.migrate_config(current_config, migrated_config,
                                 always_update, update_defaults)
 

@@ -126,6 +126,7 @@ def test_get_config_value_from_override(simple_item):
 
 @pytest.mark.parametrize('item_type,orig,expected', [
     ('str', 123, '123'),
+    ('str', u'🐍', u'🐍'),
     ('int', '123', 123),
     ('long', '123', long('123')),
     ('complex', '2j', 2j),

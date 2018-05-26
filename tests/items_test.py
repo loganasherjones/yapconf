@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
+import sys
 from argparse import ArgumentParser
 
 import pytest
-import sys
 
 import yapconf
-from yapconf.exceptions import YapconfItemError, YapconfDictItemError, \
-    YapconfListItemError, YapconfItemNotFound, YapconfValueError
-from yapconf.items import YapconfItem, YapconfDictItem, YapconfListItem, \
-    YapconfBoolItem, from_specification
+from yapconf.exceptions import (YapconfDictItemError, YapconfItemError,
+                                YapconfItemNotFound, YapconfListItemError,
+                                YapconfValueError)
+from yapconf.items import (YapconfBoolItem, YapconfDictItem, YapconfItem,
+                           YapconfListItem, from_specification)
 
 if sys.version_info > (3,):
     long = int

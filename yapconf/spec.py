@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import logging
-import six
 import os
 
-from box import Box
+import six
 
 import yapconf
-from yapconf.exceptions import YapconfSpecError, YapconfLoadError, \
-    YapconfItemNotFound
+from box import Box
+from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
+                                YapconfSpecError)
 from yapconf.items import from_specification
 
 

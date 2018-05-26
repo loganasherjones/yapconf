@@ -6,9 +6,10 @@ import sys
 import six
 
 import yapconf
-from yapconf.actions import MergeAction, AppendBoolean, AppendReplace
-from yapconf.exceptions import YapconfItemError, YapconfItemNotFound, \
-    YapconfValueError, YapconfListItemError, YapconfDictItemError
+from yapconf.actions import AppendBoolean, AppendReplace, MergeAction
+from yapconf.exceptions import (YapconfDictItemError, YapconfItemError,
+                                YapconfItemNotFound, YapconfListItemError,
+                                YapconfValueError)
 
 if sys.version_info > (3,):
     long = int

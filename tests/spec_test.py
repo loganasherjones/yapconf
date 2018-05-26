@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
+import json
+import os
+import sys
 from argparse import ArgumentParser
 
 import pytest
+from mock import Mock, mock_open, patch
+
 import yapconf
-from mock import patch, mock_open, Mock
-
-from yapconf.exceptions import YapconfSpecError, YapconfLoadError, \
-    YapconfItemNotFound
+from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
+                                YapconfSpecError)
 from yapconf.spec import YapconfSpec
-
-import sys
-import os
-import json
 
 # Hack so that tox works correctly in multiple
 # versions of python

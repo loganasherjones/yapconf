@@ -1,0 +1,11 @@
+file: ./file.yaml
+web:
+    port: 2345
+    key: /etc/certs/private.key
+    crt: /etc/certs/public.crt
+db_name: test
+db_host: localhost
+db_port: 3306
+database:
+    verbose: true
+emoji: 💩

@@ -35,6 +35,8 @@ Features
 Yapconf helps manage your python application's configuration
 
 * JSON/YAML config file support
+* Etcd config support
+* Kubernetes ConfigMap support
 * Argparse integration
 * Environment Loading
 * Bootstrapping
@@ -59,11 +61,15 @@ Then you can use Yapconf yourself!
     # First define a specification
     my_spec = YapconfSpec({"foo": {"type": "str", "default": "bar"}}, env_prefix='MY_APP_')
 
+    # Now add your sources (order does not matter)
+    my_spec.add_source('environment', 'environment')
+    my_spec.add_source('config.yaml', 'yaml', filename='/path/to/config.yaml')
+
     # Then load the configuration in whatever order you want!
     # load_config will automatically look for the 'foo' value in
     # '/path/to/config.yml', then the environment, finally
     # falling back to the default if it was not found elsewhere
-    config = my_spec.load_config('/path/to/config.yml', 'ENVIRONMENT')
+    config = my_spec.load_config('config.yaml', 'environment')
 
     print(config.foo)
     print(config['foo'])
@@ -82,7 +88,7 @@ You can also add these arguments to the command line very easily
     cli_args = vars(parser.parse_args(sys.argv[1:]))
 
     # Now you can load these via load_config:
-    config = my_spec.load_config(cli_args, '/path/to/config.yml', 'ENVIRONMENT')
+    config = my_spec.load_config(cli_args, 'config.yaml', 'environment')
 
 For more detailed information and better walkthroughs, checkout the documentation!
 

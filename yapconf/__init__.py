@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """Top-level package for Yapconf."""
 import collections
 import json
@@ -16,7 +15,11 @@ if sys.version_info.major < 3:
 elif sys.version_info.major == 3:
     unicode = str
 
+# Setup feature flags for use throughout the package.
 yaml_support = True
+etcd_support = True
+kubernetes_support = True
+redis_support = True
 
 try:
     # We set safe_load, to be load because otherwise ruamel.yaml
@@ -32,14 +35,49 @@ except ImportError:
         yaml = None
         yaml_support = False
 
+try:
+    from etcd import client as etcd_client
+except ImportError as ex:
+    etcd_client = None
+    etcd_support = False
+
+
+try:
+    from kubernetes import client as kubernetes_client
+except ImportError as ex:
+    kubernetes_client = None
+    kubernetes_support = False
+
+
 __author__ = """Logan Asher Jones"""
 __email__ = 'loganasherjones@gmail.com'
 __version__ = '0.2.4'
 
 
-FILE_TYPES = ('json',)
+FILE_TYPES = {'json', }
+SUPPORTED_SOURCES = {
+    'dict',
+    'environment',
+    'json',
+}
+ALL_SUPPORTED_SOURCES = {
+    'dict',
+    'environment',
+    'etcd',
+    'json',
+    'kubernetes',
+    'yaml',
+}
+
 if yaml_support:
-    FILE_TYPES += ('yaml', )
+    FILE_TYPES.add('yaml')
+    SUPPORTED_SOURCES.add('yaml')
+
+if etcd_support:
+    SUPPORTED_SOURCES.add('etcd')
+
+if kubernetes_support:
+    SUPPORTED_SOURCES.add('kubernetes')
 
 __all__ = ['YapconfSpec']
 

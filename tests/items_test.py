@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
+import sys
 from argparse import ArgumentParser
 
 import pytest
-import sys
 
 import yapconf
-from yapconf.exceptions import YapconfItemError, YapconfDictItemError, \
-    YapconfListItemError, YapconfItemNotFound, YapconfValueError
-from yapconf.items import YapconfItem, YapconfDictItem, YapconfListItem, \
-    YapconfBoolItem, from_specification
+from yapconf.exceptions import (YapconfDictItemError, YapconfItemError,
+                                YapconfItemNotFound, YapconfListItemError,
+                                YapconfValueError)
+from yapconf.items import (YapconfBoolItem, YapconfDictItem, YapconfItem,
+                           YapconfListItem, from_specification)
 
 if sys.version_info > (3,):
     long = int
@@ -125,6 +126,7 @@ def test_get_config_value_from_override(simple_item):
 
 @pytest.mark.parametrize('item_type,orig,expected', [
     ('str', 123, '123'),
+    ('str', u'🐍', u'🐍'),
     ('int', '123', 123),
     ('long', '123', long('123')),
     ('complex', '2j', 2j),

@@ -3,7 +3,7 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -17,28 +17,28 @@ requirements = [
 ]
 
 extras = {
-    'deploy': [
-        'wheel',
-        'twine',
-    ],
-    'docs': [
-        'sphinx',
-        'sphinx_rtd_theme',
-    ],
+    'deploy': ['wheel', 'twine', ],
+    'etcd': ['python-etcd', ],
+    'develop': ['isort', 'watchdog', ],
+    'docs': ['sphinx', 'sphinx_rtd_theme', ],
+    'k8s': ['kubernetes', ],
     'test': [
         'codecov',
         'coverage',
         'flake8',
         'funcsigs',
+        'kubernetes',
         'mock',
         'pluggy<0.7,>=0.5',
         'pytest',
         'pytest-lazy-fixture',
         'pytest-cov',
         'pytest-runner',
+        'python-etcd',
         'ruamel.yaml',
         'tox',
-    ]
+    ],
+    'yaml': ['ruamel.yaml'],
 }
 
 setup(
@@ -56,7 +56,7 @@ setup(
     zip_safe=False,
     keywords='yapconf',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 3 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import copy
 import logging
 import sys
@@ -6,12 +8,14 @@ import sys
 import six
 
 import yapconf
-from yapconf.actions import MergeAction, AppendBoolean, AppendReplace
-from yapconf.exceptions import YapconfItemError, YapconfItemNotFound, \
-    YapconfValueError, YapconfListItemError, YapconfDictItemError
+from yapconf.actions import AppendBoolean, AppendReplace, MergeAction
+from yapconf.exceptions import (YapconfDictItemError, YapconfItemError,
+                                YapconfItemNotFound, YapconfListItemError,
+                                YapconfValueError)
 
 if sys.version_info > (3,):
     long = int
+    unicode = str
 
 TYPES = ('str', 'int', 'long', 'float', 'bool', 'complex', 'dict', 'list', )
 
@@ -363,7 +367,10 @@ class YapconfItem(object):
     def convert_config_value(self, value, label):
         try:
             if self.item_type == 'str':
-                return str(value)
+                if isinstance(value, unicode):
+                    return value
+                else:
+                    return str(value)
             elif self.item_type == 'int':
                 return int(value)
             elif self.item_type == 'long':

@@ -18,6 +18,11 @@ class YapconfSpecError(YapconfError):
     pass
 
 
+class YapconfSourceError(YapconfError):
+    """Error occured attempting to validate or load a config source."""
+    pass
+
+
 class YapconfLoadError(YapconfError):
     """There was an error while trying to load the overrides provided"""
     pass

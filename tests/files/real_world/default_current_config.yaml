@@ -1,0 +1,11 @@
+file: /default/path/to/file.yaml
+web_port: 3000
+ssl:
+    private_key: /etc/certs/private.key
+    public_key: /etc/certs/public.crt
+database:
+    name: myapp
+    host: localhost
+    port: 3306
+    verbose: false
+emoji: 🐍

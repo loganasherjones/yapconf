@@ -2,6 +2,12 @@
 History
 =======
 
+0.3.0 TBD
+---------
+* Fixed an issue where utf-8 migrations would break
+* Added support for etcd
+* Added support for kubernetes
+
 0.2.4 (2018-05-21)
 ------------------
 * Flattened configs before loading (#54)

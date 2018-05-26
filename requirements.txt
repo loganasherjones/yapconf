@@ -1,1 +1,1 @@
--e .[deploy,develop,docs,test]
+-e .[deploy,develop,docs,etcd,k8s,test,yaml]

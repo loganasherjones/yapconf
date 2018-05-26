@@ -1,0 +1,10 @@
+file: ./file.yaml
+web:
+    port: 1234
+    key: /previous/path/to/private.key
+    crt: /previous/path/to/public.crt
+db_name: test
+db_host: localhost
+database:
+    port: 1234
+emoji: 💩

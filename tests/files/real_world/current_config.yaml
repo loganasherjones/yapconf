@@ -1,0 +1,11 @@
+file: /path/to/file.yaml
+web_port: 443
+ssl:
+    private_key: /path/to/private.key
+    public_key: /path/to/public.crt
+database:
+    name: myapp_prod
+    host: 1.2.3.4
+    port: 3306
+    verbose: false
+emoji: 💩

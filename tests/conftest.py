@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import os
+
 import pytest
 
+import yapconf
+from yapconf import YapconfSpec
 from yapconf.items import from_specification
 
 
@@ -173,3 +177,200 @@ def db_item():
             },
         },
     )['db']
+
+
+@pytest.fixture
+def basic_spec(simple_item_spec):
+    """Most basic spec you can have"""
+    return YapconfSpec(simple_item_spec)
+
+
+@pytest.fixture
+def simple_spec():
+    """Simple YapconfSpec for all YapconfItem variations"""
+    return YapconfSpec(
+        {
+            'my_string': {'type': 'str', 'required': True, },
+            'my_int': {'type': 'int', 'required': True, },
+            'my_long': {'type': 'long', 'required': True, },
+            'my_float': {'type': 'float', 'required': True, },
+            'my_bool': {'type': 'bool', 'required': True, },
+            'my_complex': {'type': 'complex', 'required': True, },
+        }
+    )
+
+
+@pytest.fixture
+def spec_with_lists():
+    """YapconfSpec for testing YapconfListItem variations"""
+    return YapconfSpec(
+        {
+            'simple_list': {
+                'type': 'list',
+                'required': True,
+                'items': {
+                    'list_item': {
+                        'type': 'str', 'required': True
+                    }
+                }
+            },
+            'top_list': {
+                'type': 'list',
+                'required': True,
+                'items': {
+                    'nested_list': {
+                        'type': 'list',
+                        'required': True,
+                        'items': {
+                            'nested_list_items': {
+                                'type': 'int',
+                                'required': True
+                            }
+                        }
+                    }
+                }
+            },
+            'list_of_dictionaries': {
+                'type': 'list',
+                'required': True,
+                'items': {
+                    'list_item': {
+                        'type': 'dict',
+                        'required': True,
+                        'items': {
+                            'foo': {'type': 'str', 'required': True, },
+                            'bar': {'type': 'str', 'required': False, }
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+
+@pytest.fixture
+def spec_with_dicts():
+    """YapconfSpec for testing YapconfDictItem variations"""
+    return YapconfSpec({
+        'database': {
+            'type': 'dict',
+            'required': True,
+            'items': {
+                'name': {'type': 'str', 'required': True, },
+                'host': {'type': 'str', 'required': True, },
+                'port': {'type': 'int', 'required': True, },
+            }
+        },
+        'foo': {
+            'type': 'dict',
+            'required': True,
+            'items': {
+                'bar': {
+                    'type': 'dict',
+                    'required': True,
+                    'items': {
+                        'baz': {
+                            'type': 'str', 'required': True,
+                        },
+                    },
+                },
+                'bat': {
+                    'type': 'bool',
+                }
+            },
+        },
+    })
+
+
+@pytest.fixture
+def real_world_spec():
+    """YapconfSpec based on a 'real-world' example"""
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    filename = os.path.join(current_dir, 'files', 'real_world', 'spec.yaml')
+    return YapconfSpec(filename, file_type='yaml', env_prefix='MY_APP_')
+
+
+@pytest.fixture
+def current_config():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    filename = os.path.join(
+        current_dir,
+        'files',
+        'real_world',
+        'current_config.yaml'
+    )
+    return yapconf.load_file(filename, 'yaml')
+
+
+@pytest.fixture
+def previous_config():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    filename = os.path.join(
+        current_dir,
+        'files',
+        'real_world',
+        'previous_config.yaml'
+    )
+    return yapconf.load_file(filename, 'yaml')
+
+
+@pytest.fixture
+def default_current_config():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    filename = os.path.join(
+        current_dir,
+        'files',
+        'real_world',
+        'default_current_config.yaml'
+    )
+    return yapconf.load_file(filename, 'yaml')
+
+
+@pytest.fixture
+def default_previous_config():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    filename = os.path.join(
+        current_dir,
+        'files',
+        'real_world',
+        'default_previous_config.yaml'
+    )
+    return yapconf.load_file(filename, 'yaml')
+
+
+@pytest.fixture
+def example_spec():
+    return YapconfSpec(
+        {
+            'foo': {},
+            'emoji': {},
+            u'💩': {},
+            'db': {
+                'type': 'dict',
+                'items': {
+                    'name': {},
+                    'port': {'type': 'int'}
+                }
+            },
+            'items': {
+                'type': 'list',
+                'items': {
+                    'item': {'type': 'int'},
+                },
+            },
+        }
+    )
+
+
+@pytest.fixture
+def example_data():
+    return {
+        "foo": "bar",
+        "emoji": u"💩",
+        u"💩": u"🐍",
+        "db": {
+            "name": "db_name",
+            "port": 123
+        },
+        "items": [1, 2, 3]
+    }

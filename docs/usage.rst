@@ -19,10 +19,9 @@ have the following specification defined
         'filename': {'type': 'str'},
     })
 
-Now that you have a specification for your configuration, you can load your config from lots
-of different places using ``load_config``. When using this method, it is significant the
-order in which you pass your arguments as it sets the precedence for load order. Let's see
-this in practice:
+Now that you have a specification for your configuration, you should add some sources for where
+these config values can be found from. You can find a list of all available sources in the
+:ref:`sources` section.
 
 .. code-block:: python
 
@@ -39,29 +38,57 @@ this in practice:
     # FILENAME="/some/default/config.yml"
     # DB_HOST="localhost"
 
+    # You can, just call load_config directly, but it is helpful to add these as sources
+    # to your specification:
+    my_spec.add_source('cli_args', 'dict', data=cli_args)
+    my_spec.add_source('environment', 'environment')
+    my_spec.add_source('config.yaml', 'yaml', filename=config_file)
+
+
+Then you can load your configuration by calling ``load_config``. When using this method, it is
+significant the order in which you pass yoru arguments as it sets precedence for load order. Let's
+see this in practice.
+
+.. code-block:: python
+
     # You can load your config:
-    config = my_spec.load_config(cli_args, config_file, 'ENVIRONMENT')
+    config = my_spec.load_config('cli_args', 'config.yaml', 'environment')
 
 
     # You now have a config object which can be accessed via attributes or keys:
-    config.db_name # > db_from_cli
+    config.db_name    # > db_from_cli
     config['db_port'] # > 1234
-    config.db_host # > localhost
+    config.db_host    # > localhost
     config['verbose'] # > True
-    config.filename # > /path/to/config
+    config.filename   # > /path/to/config
 
     # If you loaded in a different order, you'll get a different result
-    config = my_spec.load_config('ENVIRONMENT', config_file, cli_args)
-    config.db_name # > db_from_environment
+    config = my_spec.load_config('environment', 'config.yaml', 'cli_args')
+    config.db_name    # > db_from_environment
+
 
 This config object is powered by python-box_ which is a handy utility
 for handling your config object. It behaves just like a dictionary and you can treat it as such!
 
+Loading config without adding sources
+-------------------------------------
+
+If all you want to do is load your configuration, you can do that without sources. The point of
+the sources is to allow yapconf to eventually support watching those configs. See the `yapconf
+watcher issue`_ for more details.
+
+.. code-block:: python
+
+    # You can load your config without the add_source calls:
+
+    config = my_spec.load_config(cli_args, '/path/to/config.yaml', 'ENVIRONMENT')
+
+
 Nested Items
 ------------
-In a lot of cases, it makes sense to nest your configuration, for example, if we wanted to take all of our
-database configuration and put it into a single dictionary, that would make a lot of sense. You would specify
-this to yapconf as follows:
+In a lot of cases, it makes sense to nest your configuration, for example, if we wanted to take
+all of our database configuration and put it into a single dictionary, that would make a lot of
+sense. You would specify this to yapconf as follows:
 
 .. code-block:: python
 
@@ -79,13 +106,13 @@ this to yapconf as follows:
 
     config.db.name # returns 'name'
     config.db.port # returns 1234
-    config.db # returns the db dictionary
+    config.db      # returns the db dictionary
 
 
 List Items
 ----------
-List items are a special class of nested items which is only allowed to have a single item listed. It can
-be specified as follows:
+List items are a special class of nested items which is only allowed to have a single item listed.
+It can be specified as follows:
 
 .. code-block:: python
 
@@ -106,14 +133,14 @@ be specified as follows:
 Environment Loading
 -------------------
 
-If no ``env_name`` is specified for each item, then by default, Yapconf will automatically format the item's name
-to be all upper-case and snake case. So the name ``foo_bar`` will become ``FOO_BAR`` and ``fooBar`` will become
-``FOO_BAR``. If you do not want to apply this formatting, set ``format_env`` to ``False``. Loading ``list``
-items and ``dict`` items from the environment is not supported and as such ``env_name`` s that are set for these
-items will be ignored.
+If no ``env_name`` is specified for each item, then by default, Yapconf will automatically format
+the item's name to be all upper-case and snake case. So the name ``foo_bar`` will become
+``FOO_BAR`` and ``fooBar`` will become ``FOO_BAR``. If you do not want to apply this formatting,
+set ``format_env`` to ``False``. Loading ``list`` items and ``dict`` items from the environment is
+not supported and as such ``env_name`` s that are set for these items will be ignored.
 
-Often times, you will want to prefix environment variables with your application name or something else. You can
-set an environment prefix on the ``YapconfSpec`` item via the ``env_prefix``:
+Often times, you will want to prefix environment variables with your application name or something
+else. You can set an environment prefix on the ``YapconfSpec`` item via the ``env_prefix``:
 
 .. code-block:: python
 
@@ -130,16 +157,17 @@ set an environment prefix on the ``YapconfSpec`` item via the ``env_prefix``:
 
 
 .. note:: When using an ``env_name`` with ``env_prefix`` the ``env_prefix`` will still be applied
-    to the name you provided. If you want to avoid this behavior, set the ``apply_env_prefix`` to ``False``.
+    to the name you provided. If you want to avoid this behavior, set the ``apply_env_prefix`` to
+    ``False``.
 
-As of version 0.1.2, you can specify additional environment names via: ``alt_env_names``. The ``apply_env_prefix``
-flag will also apply to each of these. If your environment names collide with other names, then an error will
-get raised when the specification is created.
+As of version 0.1.2, you can specify additional environment names via: ``alt_env_names``. The
+``apply_env_prefix`` flag will also apply to each of these. If your environment names collide with
+other names, then an error will get raised when the specification is created.
 
 CLI Support
 -----------
-Yapconf has some great support for adding your configuration items as command-line arguments by utilizing
-argparse_. Let's assume the ``my_spec`` object from the original example
+Yapconf has some great support for adding your configuration items as command-line arguments by
+utilizing argparse_. Let's assume the ``my_spec`` object from the original example
 
 .. code-block:: python
 
@@ -174,14 +202,15 @@ argparse_. Let's assume the ``my_spec`` object from the original example
     config.verbose # False
     config.filename # '/path/to/file'
 
-Yapconf makes adding CLI arguments very easy! If you don't want to expose something over the command line
-you can set the ``cli_expose`` flag to ``False``.
+Yapconf makes adding CLI arguments very easy! If you don't want to expose something over the
+command line you can set the ``cli_expose`` flag to ``False``.
 
 Boolean Items and the CLI
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Boolean items will add special flags to the command-line based on their defaults. If you have a default set to
-``True`` then a ``--no-{item_name}`` flag will get added. If the default is ``False`` then a ``--{{item_name}}``
-will get added as an argument. If no default is specified, then both will be added as mutually exclusive arguments.
+Boolean items will add special flags to the command-line based on their defaults. If you have a
+default set to ``True`` then a ``--no-{item_name}`` flag will get added. If the default is
+``False`` then a ``--{{item_name}}`` will get added as an argument. If no default is specified,
+then both will be added as mutually exclusive arguments.
 
 Nested Items and the CLI
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -227,31 +256,35 @@ Yapconf even supports ``list`` and ``dict`` type items from the command-line:
 
 Limitations
 ^^^^^^^^^^^
-There are a few limitations to how far down the rabbit-hole Yapconf is willing to go. Yapconf does not support
-``list`` type items with either ``dict`` or ``list`` children. The reason is that it would be very cumbersome
-to start specifying which items belong to which dictionaries and in which index in the list.
+There are a few limitations to how far down the rabbit-hole Yapconf is willing to go. Yapconf does
+not support ``list`` type items with either ``dict`` or ``list`` children. The reason is that it
+would be very cumbersome to start specifying which items belong to which dictionaries and in which
+index in the list.
 
 
 CLI/Environment Name Formatting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-A quick note on formatting and ``yapconf``. Yapconf tries to create sensible ways to convert your config items
-into "normal" environment variables and command-line arguments. In order to do this, we have to make some
-assumptions about what "normal" environment variables and command-line arguments are.
+A quick note on formatting and ``yapconf``. Yapconf tries to create sensible ways to convert your
+config items into "normal" environment variables and command-line arguments. In order to do this,
+we have to make some assumptions about what "normal" environment variables and command-line
+arguments are.
 
-By default, environment variables are assumed to be all upper-case, snake-case names. The item name ``foO_BaR``
-would become ``FOO_BAR`` in the environment.
+By default, environment variables are assumed to be all upper-case, snake-case names. The item
+name ``foO_BaR`` would become ``FOO_BAR`` in the environment.
 
-By default, command-line argument are assumed to be kebab-case. The item name ``foo_bar`` would become ``--foo-bar``
+By default, command-line argument are assumed to be kebab-case. The item name ``foo_bar`` would
+become ``--foo-bar``
 
-If you do not like this formatting, then you can turn it off by setting the ``format_env`` and ``format_cli`` flags.
+If you do not like this formatting, then you can turn it off by setting the ``format_env`` and
+``format_cli`` flags.
 
 Config Migration
 ----------------
-Throughout the lifetime of an application it is common to want to move configuration around, changing both the
-names of configuration items and the default values for each. Yapconf also makes this migration a breeze! Each
-item has a ``previous_defaults`` and ``previous_names`` values that can be specified. These values help you
-migrate previous versions of config files to newer versions. Let's see a basic example where we might want to
-update a config file with a new default:
+Throughout the lifetime of an application it is common to want to move configuration around,
+changing both the names of configuration items and the default values for each. Yapconf also makes
+this migration a breeze! Each item has a ``previous_defaults`` and ``previous_names`` values that
+can be specified. These values help you migrate previous versions of config files to newer
+versions. Let's see a basic example where we might want to update a config file with a new default:
 
 .. code-block:: python
 
@@ -292,9 +325,9 @@ There are many values you can pass to ``migrate_config_file``, by default it loo
 
 YAML Support
 ------------
-Yapconf knows how to output and read both ``json`` and ``yaml`` files. However, to keep the dependencies to a
-minimum it does not come with ``yaml``. You will have to manually install either ``pyyaml`` or ``ruamel.yaml`` if
-you want to use ``yaml``.
+Yapconf knows how to output and read both ``json`` and ``yaml`` files. However, to keep the
+dependencies to a minimum it does not come with ``yaml``. You will have to manually install
+either ``pyyaml`` or ``ruamel.yaml`` if you want to use ``yaml``.
 
 Item Arguments
 --------------
@@ -351,3 +384,4 @@ For each item in a specification, you can set any of these keys:
 
 .. _python-box: https://github.com/cdgriffith/Box
 .. _argparse: https://docs.python.org/3/library/argparse.html
+.. _yapconf  watcher issue: https://github.com/loganasherjones/yapconf/issues/36

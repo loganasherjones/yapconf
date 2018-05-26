@@ -6,23 +6,19 @@ from argparse import ArgumentParser
 
 import pytest
 from mock import Mock, mock_open, patch
+from ruamel import yaml
 
 import yapconf
 from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
-                                YapconfSpecError)
+                                YapconfSourceError, YapconfSpecError)
 from yapconf.spec import YapconfSpec
 
-# Hack so that tox works correctly in multiple
-# versions of python
-builtins_path = '__builtin__'
 if sys.version_info > (3,):
-    builtins_path = 'builtins'
     long = int
-else:
-    builtins_path = 'yapconf.spec'
 
 original_env = None
 original_yaml = yapconf.yaml
+current_dir = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_function(function):
@@ -33,182 +29,9 @@ def setup_function(function):
 def teardown_function(function):
     os.environ = original_env
     yapconf.yaml = original_yaml
-
-
-@pytest.fixture
-def basic_spec():
-    """Most basic spec you can have"""
-    return YapconfSpec({'foo': {'type': 'str', 'required': True}})
-
-
-@pytest.fixture
-def simple_spec():
-    """Simple YapconfSpec for all YapconfItem variations"""
-    return YapconfSpec(
-        {
-            'my_string': {'type': 'str', 'required': True, },
-            'my_int': {'type': 'int', 'required': True, },
-            'my_long': {'type': 'long', 'required': True, },
-            'my_float': {'type': 'float', 'required': True, },
-            'my_bool': {'type': 'bool', 'required': True, },
-            'my_complex': {'type': 'complex', 'required': True, },
-        }
-    )
-
-
-@pytest.fixture
-def spec_with_lists():
-    """YapconfSpec for testing YapconfListItem variations"""
-    return YapconfSpec(
-        {
-            'simple_list': {
-                'type': 'list',
-                'required': True,
-                'items': {
-                    'list_item': {
-                        'type': 'str', 'required': True
-                    }
-                }
-            },
-            'top_list': {
-                'type': 'list',
-                'required': True,
-                'items': {
-                    'nested_list': {
-                        'type': 'list',
-                        'required': True,
-                        'items': {
-                            'nested_list_items': {
-                                'type': 'int',
-                                'required': True
-                            }
-                        }
-                    }
-                }
-            },
-            'list_of_dictionaries': {
-                'type': 'list',
-                'required': True,
-                'items': {
-                    'list_item': {
-                        'type': 'dict',
-                        'required': True,
-                        'items': {
-                            'foo': {'type': 'str', 'required': True, },
-                            'bar': {'type': 'str', 'required': False, }
-                        }
-                    }
-                }
-            }
-        }
-    )
-
-
-@pytest.fixture
-def spec_with_dicts():
-    """YapconfSpec for testing YapconfDictItem variations"""
-    return YapconfSpec({
-        'database': {
-            'type': 'dict',
-            'required': True,
-            'items': {
-                'name': {'type': 'str', 'required': True, },
-                'host': {'type': 'str', 'required': True, },
-                'port': {'type': 'int', 'required': True, },
-            }
-        },
-        'foo': {
-            'type': 'dict',
-            'required': True,
-            'items': {
-                'bar': {
-                    'type': 'dict',
-                    'required': True,
-                    'items': {
-                        'baz': {
-                            'type': 'str', 'required': True,
-                        },
-                    },
-                },
-                'bat': {
-                    'type': 'bool',
-                }
-            },
-        },
-    })
-
-
-@pytest.fixture
-def real_world_spec():
-    """YapconfSpec based on a 'real-world' example"""
-    return YapconfSpec({
-        'file': {
-            'type': 'str',
-            'required': True,
-            'default': '/default/path/to/file.yaml',
-            'bootstrap': True,
-            'env_name': 'MY_APP_CONFIG_FILE',
-            'cli_short_name': 'f',
-            'previous_defaults': ['./file.yaml']
-        },
-        'web_port': {
-            'type': 'int',
-            'required': True,
-            'default': 3000,
-            'previous_names': ['web.port'],
-            'cli_short_name': 'p',
-            'previous_defaults': [1234, 2345]
-        },
-        'ssl': {
-            'type': 'dict',
-            'required': True,
-            'items': {
-                'private_key': {
-                    'type': 'str',
-                    'required': True,
-                    'default': '/etc/certs/private.key',
-                    'previous_names': ['web.key']
-                },
-                'public_key': {
-                    'type': 'str',
-                    'required': True,
-                    'default': '/etc/certs/public.crt',
-                    'previous_names': ['web.crt']
-                }
-            }
-        },
-        'database': {
-            'type': 'dict',
-            'required': True,
-            'items': {
-                'name': {
-                    'type': 'str',
-                    'required': True,
-                    'default': 'myapp',
-                    'previous_names': ['db_name'],
-                    'previous_defaults': ['test']
-                },
-                'host': {
-                    'type': 'str',
-                    'required': True,
-                    'default': 'localhost',
-                    'previous_names': ['db_host'],
-                },
-                'port': {
-                    'type': 'int',
-                    'required': True,
-                    'default': 3306,
-                    'previous_names': ['db_port']
-                },
-                'verbose': {
-                    'type': 'bool',
-                    'required': True,
-                    'default': False,
-                    'previous_defaults': [True],
-                }
-            }
-        }
-    }, env_prefix='MY_APP_')
+    tmp_path = os.path.join(current_dir, 'files', 'real_world', 'tmp')
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
 
 
 def test_simple_load_config(simple_spec):
@@ -349,7 +172,7 @@ def test_load_config_invalid_override(basic_spec, override):
 
 def test_load_config_yaml_not_supported(basic_spec):
     yapconf.yaml = None
-    with pytest.raises(YapconfLoadError):
+    with pytest.raises(YapconfSourceError):
         basic_spec.load_config(('label', 'path/to/file', 'yaml'))
 
 
@@ -547,96 +370,70 @@ def test_load_config_real_world(real_world_spec):
     assert config['database']['verbose']
 
 
-current_config = {
-    'file': '/path/to/file.yaml',
-    'web_port': 443,
-    'ssl': {
-        'private_key': '/path/to/private.key',
-        'public_key': '/path/to/public.crt',
-    },
-    'database': {
-        'name': 'myapp_prod',
-        'host': '1.2.3.4',
-        'port': 3306,
-        'verbose': False
-    }
-}
-
-previous_config = {
-    'file': './file.yaml',
-    'web': {
-        'port': 1234,
-        'key': '/previous/path/to/private.key',
-        'crt': '/previous/path/to/public.crt',
-    },
-    'db_name': 'test',
-    'db_host': 'localhost',
-    'database': {
-        'port': 1234
-    }
-}
-
-default_current_config = {
-    'file': '/default/path/to/file.yaml',
-    'web_port': 3000,
-    'ssl': {
-        'private_key': '/etc/certs/private.key',
-        'public_key': '/etc/certs/public.crt',
-    },
-    'database': {
-        'name': 'myapp',
-        'host': 'localhost',
-        'port': 3306,
-        'verbose': False
-    }
-}
-
-previous_default_config = {
-    'file': './file.yaml',
-    'web': {
-        'port': 2345,
-        'key': '/etc/certs/private.key',
-        'crt': '/etc/certs/public.crt'
-    },
-    'db_name': 'test',
-    'db_host': 'localhost',
-    'db_port': 3306,
-    'database': {
-        'verbose': True
-    }
-}
-
-
 @patch('os.path.isfile', Mock(return_value=True))
-@pytest.mark.parametrize('current,expected,always_update,update_defaults', [
-    (current_config, current_config, False, True),
-    (default_current_config, default_current_config, False, True),
-    (previous_default_config, default_current_config, False, True),
-    (previous_config,
-     {
-         'file': '/default/path/to/file.yaml',
-         'web_port': 3000,
-         'ssl': {
-             'private_key': '/previous/path/to/private.key',
-             'public_key': '/previous/path/to/public.crt'
-         },
-         'database': {
-             'name': 'myapp',
-             'host': 'localhost',
-             'port': 1234,
-             'verbose': False
-         }
-     }, False, True)
-])
-def test_real_world_migrations(real_world_spec, current, expected,
-                               always_update, update_defaults):
-    open_path = 'yapconf.open'
-    with patch(open_path, mock_open(read_data=json.dumps(current))):
-        new_config = real_world_spec.migrate_config_file(
-            'file', create=False, update_defaults=update_defaults,
-            always_update=always_update)
+@pytest.mark.parametrize(
+    'filename,expected,always_update,update_defaults,output_file_type', [
+        (
+            'default_current_config.yaml',
+            pytest.lazy_fixture('default_current_config'),
+            False,
+            True,
+            'yaml',
+        ),
+        (
+            'default_previous_config.yaml',
+            pytest.lazy_fixture('default_current_config'),
+            False,
+            True,
+            'yaml',
+        ),
+        (
+            'previous_config.yaml',
+            {
+                'emoji': u'🐍',
+                'file': '/default/path/to/file.yaml',
+                'web_port': 3000,
+                'ssl': {
+                    'private_key': '/previous/path/to/private.key',
+                    'public_key': '/previous/path/to/public.crt'
+                },
+                'database': {
+                    'name': 'myapp',
+                    'host': 'localhost',
+                    'port': 1234,
+                    'verbose': False
+                }
+            },
+            False,
+            True,
+            'json',
+        ),
+    ]
+)
+def test_real_world_migrations(
+    real_world_spec,
+    filename,
+    expected,
+    always_update,
+    update_defaults,
+    output_file_type
+):
+    real_world_path = os.path.join(current_dir, 'files', 'real_world')
+    full_path = os.path.join(real_world_path, filename)
+    tmp_config = os.path.join(real_world_path, 'tmp')
 
-        assert new_config == expected
+    new_config = real_world_spec.migrate_config_file(
+        full_path,
+        create=True,
+        update_defaults=update_defaults,
+        always_update=always_update,
+        output_file_type=output_file_type,
+        output_file_name=tmp_config
+    )
+
+    assert new_config == expected
+
+    assert real_world_spec.load_config(tmp_config) == expected
 
 
 @pytest.mark.parametrize('env_name,apply_prefix,env_prefix,key', [
@@ -656,3 +453,108 @@ def test_env_names_with_prefixes(env_name, apply_prefix, env_prefix, key):
 
     config = spec.load_config(('ENVIRONMENT', {key: 'host_value'}))
     assert config.bg_host == 'host_value'
+
+
+@pytest.mark.usefixtures('simple_spec')
+@pytest.mark.parametrize('key', [
+    '/',
+    '/foo/bar/',
+])
+def test_load_etcd(simple_spec, key):
+    children = [
+        Mock(key='%smy_string' % key, value='str_val'),
+        Mock(key='%smy_int' % key, value='123'),
+        Mock(key='%smy_long' % key, value='12341234'),
+        Mock(key='%smy_float' % key, value='123.123'),
+        Mock(key='%smy_bool' % key, value='true'),
+        Mock(key='%smy_complex' % key, value='1j'),
+    ]
+
+    etcd_result = Mock(dir=True)
+    etcd_result.__iter__ = Mock(return_value=iter(children))
+    client = Mock(spec=yapconf.etcd_client.Client)
+    client.read = Mock(return_value=etcd_result)
+    simple_spec.add_source('etcd', 'etcd', client=client)
+    config = simple_spec.load_config('etcd')
+    assert config == {
+        'my_string': 'str_val',
+        'my_int': 123,
+        'my_long': 12341234,
+        'my_float': 123.123,
+        'my_bool': True,
+        'my_complex': 1j,
+    }
+
+
+@pytest.mark.parametrize('data,filename,file_type', [
+    (None, 'unicode.json', 'json'),
+    (None, 'unicode.yaml', 'yaml'),
+    (pytest.lazy_fixture('example_data'), None, 'json'),
+])
+def test_load_from_source(
+    example_spec,
+    example_data,
+    data,
+    filename,
+    file_type
+):
+    example_path = os.path.join(current_dir, 'files')
+    if filename is not None:
+        full_path = os.path.join(example_path, filename)
+    else:
+        full_path = None
+
+    if data is not None:
+        data = json.dumps(data)
+
+    example_spec._file_type = file_type
+    example_spec.add_source(
+        'example',
+        file_type,
+        filename=full_path,
+        data=data
+    )
+
+    config = example_spec.load_config('example')
+    assert config == example_data
+
+
+@pytest.mark.usefixtures('simple_spec')
+@pytest.mark.parametrize('key,config_type,formatter', [
+    (None, None, None),
+    ('file.yaml', 'yaml', yaml.dump),
+    ('file.json', 'json', json.dumps),
+])
+def test_load_kubernetes(simple_spec, key, config_type, formatter):
+    data = {
+        'my_string': 'str_val',
+        'my_int': '123',
+        'my_long': '12341234',
+        'my_float': '123.123',
+        'my_bool': 'True',
+        'my_complex': '1j',
+    }
+    if formatter:
+        data = formatter(data)
+
+    if key:
+        to_return = {key: data}
+    else:
+        to_return = data
+
+    client = Mock(spec=yapconf.kubernetes_client.CoreV1Api)
+    client.read_namespaced_config_map = Mock(return_value=Mock(data=to_return))
+    simple_spec.add_source('kubernetes',
+                           'kubernetes',
+                           client=client,
+                           config_type=config_type,
+                           key=key)
+    config = simple_spec.load_config('kubernetes')
+    assert config == {
+        'my_string': 'str_val',
+        'my_int': 123,
+        'my_long': 12341234,
+        'my_float': 123.123,
+        'my_bool': True,
+        'my_complex': 1j,
+    }

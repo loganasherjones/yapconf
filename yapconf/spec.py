@@ -9,6 +9,7 @@ from box import Box
 from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
                                 YapconfSpecError)
 from yapconf.items import from_specification
+from yapconf.sources import get_source
 
 
 class YapconfSpec(object):
@@ -24,8 +25,9 @@ class YapconfSpec(object):
         First define a specification
 
         >>> my_spec = YapconfSpec(
-        ... {"foo": {"type": "str", "default": "bar"}},
-        ... env_prefix='MY_APP_')
+        ...   {"foo": {"type": "str", "default": "bar"}},
+        ...   env_prefix='MY_APP_'
+        ... )
 
         Then load the configuration in whatever order you want!
         load_config will automatically look for the 'foo' value in
@@ -56,12 +58,15 @@ class YapconfSpec(object):
                                                  self._env_prefix,
                                                  self._separator)
         self._logger = logging.getLogger(__name__)
+        self._sources = {}
 
     def _load_specification(self, specification):
         if isinstance(specification, six.string_types):
-            specification = yapconf.load_file(specification,
-                                              file_type=self._file_type,
-                                              klazz=YapconfSpecError)
+            specification = yapconf.load_file(
+                specification,
+                file_type=self._file_type,
+                klazz=YapconfSpecError
+            )
 
         if not isinstance(specification, dict):
             raise YapconfSpecError('Specification must be a dictionary or a '
@@ -111,6 +116,51 @@ class YapconfSpec(object):
         """
         [item.add_argument(parser, bootstrap)
          for item in self._get_items(bootstrap=False)]
+
+    def add_source(self, label, source_type, **kwargs):
+        """Add a source to the spec.
+
+        Sources should have a unique label. This will help tracing where your
+        configurations are coming from if you turn up the log-level.
+
+        The keyword arguments are significant. Different sources require
+        different keyword arguments. Required keys for each source_type are
+        listed below, for a detailed list of all possible arguments, see the
+        individual source's documentation.
+
+        source_type: dict
+            required keyword arguments:
+                - data - A dictionary
+
+        source_type: environment
+            No required keyword arguments.
+
+        source_type: etcd
+            required keyword arguments:
+                - client - A client from the python-etcd package.
+
+        source_type: json
+            required keyword arguments:
+                - filename - A JSON file.
+                - data - A string representation of JSON
+
+        source_type: kubernetes
+            required keyword arguments:
+                - client - A client from the kubernetes package
+                - name - The name of the ConfigMap to load
+
+        source_type: yaml
+            required keyword arguments:
+                - filename - A YAML file.
+
+        Args:
+            label (str): A label for the source.
+            source_type (str): A source type, available source types depend
+            on the packages installed. See ``yapconf.ALL_SUPPORTED_SOURCES``
+            for a complete list.
+
+        """
+        self._sources[label] = get_source(label, source_type, **kwargs)
 
     def get_item(self, name, bootstrap=False):
         """Get a particular item in the specification.
@@ -311,55 +361,72 @@ class YapconfSpec(object):
         # we cannot use a dictionary because we need to preserve
         # the order of the arguments passed in as they are significant
         overrides = []
+
         for index, override in enumerate(args):
-            label, info = self._generate_override(index, override)
-            overrides.append((label, info))
+            source = self._extract_source(index, override)
+            overrides.append(source.generate_override(self._separator))
         return overrides
 
-    def _generate_override(self, index, value):
+    def _explode_override(self, override):
+        label = None
+        unpacked_value = override
+        file_type = self._file_type
 
         # If they provided a tuple, they may have named their tuple
         # or given us a differing file_type. So we unpack it before
         # we look at the unpacked value.
-        if isinstance(value, tuple):
-            if len(value) < 2:
-                raise YapconfLoadError('Invalid override tuple provided. The '
-                                       'tuple must have a name and value. '
-                                       'Optionally, it can provide a third '
-                                       'argument specifying the file type if '
-                                       'it is different than the default '
-                                       'file_type passed during '
-                                       'initialization.')
-            label = value[0]
-            unpacked_value = value[1]
-            file_type = self._file_type
-            if len(value) > 2:
-                file_type = value[2]
+        if isinstance(override, tuple):
+            if len(override) < 2:
+                raise YapconfLoadError(
+                    'Invalid override tuple provided. The tuple must have a '
+                    'name and value. Optionally, it can provide a third '
+                    'argument specifying the file type if it is different '
+                    'than the default file_type passed during initialization.'
+                )
 
-        else:
-            label = None
-            unpacked_value = value
-            file_type = self._file_type
+            label = override[0]
+            unpacked_value = override[1]
+            if len(override) > 2:
+                file_type = override[2]
+
+        return label, unpacked_value, file_type
+
+    def _extract_string_source(self, label, value, file_type):
+        if value in self._sources:
+            return self._sources[value]
+        elif value == 'ENVIRONMENT':
+            return get_source(value, 'environment')
+        elif file_type in ['json', 'yaml']:
+            return get_source(
+                value,
+                file_type,
+                filename=value,
+                encoding=self._encoding
+            )
+
+        raise YapconfLoadError(
+            'Invalid override given: %s. A string type was detected '
+            'but no valid source could be generated. This should be '
+            'a string which points to a label from the sources you added, '
+            'the string "ENVIRONMENT" or have a file_type of "json" or "yaml"'
+            'got a (value, file_type) of: (%s %s)' %
+            (label, value, file_type)
+        )
+
+    def _extract_source(self, index, override):
+        label, unpacked_value, file_type = self._explode_override(override)
 
         if isinstance(unpacked_value, six.string_types):
-            label = label or unpacked_value
+            return self._extract_string_source(
+                label, unpacked_value, file_type
+            )
 
-            # Special String called "ENVIRONMENT" tells us to load
-            # the override as the current environment. Otherwise
-            # a string is a file name.
-            if unpacked_value == 'ENVIRONMENT':
-                override_dict = os.environ.copy()
-            else:
-                override_dict = yapconf.load_file(unpacked_value,
-                                                  file_type=file_type,
-                                                  klazz=YapconfLoadError)
         elif isinstance(unpacked_value, dict):
-            label = label or "dict-{0}".format(index)
-            override_dict = unpacked_value
+            label = label or 'dict-%d' % index
+            return get_source(label, 'dict', data=unpacked_value)
 
-        else:
-            raise YapconfLoadError("Invalid override given: {0} Overrides "
-                                   "must be either a dictionary or a filename."
-                                   .format(unpacked_value))
-
-        return label, yapconf.flatten(override_dict)
+        raise YapconfLoadError(
+            'Invalid override given: %s overrides must be one of the '
+            'following: a dictionary, a filename, a label for a source, or '
+            '"ENVIRONMENT". Got: %s' % (label, unpacked_value)
+        )

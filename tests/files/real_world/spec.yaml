@@ -1,0 +1,74 @@
+file:
+    type: str
+    required: true
+    default: /default/path/to/file.yaml
+    bootstrap: true
+    env_name: MY_APP_CONFIG_FILE
+    cli_short_name: f
+    previous_defaults: ./file.yaml
+
+web_port:
+    type: int
+    required: true
+    default: 3000
+    previous_names:
+    - web.port
+    cli_short_name: p
+    previous_defaults:
+    - 1234
+    - 2345
+
+emoji:
+    type: str
+    required: true
+    default: 🐍
+    previous_defaults:
+    - 💩
+
+ssl:
+    type: dict
+    required: true
+    items:
+        private_key:
+            type: str
+            required: true
+            default: /etc/certs/private.key
+            previous_names:
+            - web.key
+        public_key:
+            type: str
+            required: true
+            default: /etc/certs/public.crt
+            previous_names:
+            - web.crt
+
+database:
+    type: dict
+    required: true
+    items:
+        name:
+            type: str
+            required: true
+            default: myapp
+            previous_names:
+            - db_name
+            previous_defaults:
+            - test
+        host:
+            type: str
+            required: true
+            default: localhost
+            previous_names:
+            - db_host
+        port:
+            type: int
+            required: true
+            default: 3306
+            previous_names:
+            - db_port
+        verbose:
+            type: bool
+            required: true
+            default: false
+            previous_defaults:
+            - true

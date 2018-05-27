@@ -203,6 +203,18 @@ def test_load_config_multi_part_dictionary(spec_with_dicts):
 
 
 @patch('os.path.isfile', Mock(return_value=True))
+def test_migrate_config_file():
+    spec = YapconfSpec({'foo': {'bootstrap': True}})
+    with patch('yapconf.open', mock_open(read_data='{}')):
+        config = spec.migrate_config_file(
+            '/path/to/file',
+            create=False,
+            include_bootstrap=False
+        )
+    assert config == {}
+
+
+@patch('os.path.isfile', Mock(return_value=True))
 def test_migrate_config_file_no_changes(basic_spec):
     open_path = 'yapconf.open'
     current_config = '{"foo": "bar"}'

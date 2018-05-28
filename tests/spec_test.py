@@ -570,3 +570,26 @@ def test_load_kubernetes(simple_spec, key, config_type, formatter):
         'my_bool': True,
         'my_complex': 1j,
     }
+
+
+def test_defaults(fallback_spec):
+    assert fallback_spec.defaults == {
+        'defaults': {
+            'str': 'default_str',
+            'int': 123,
+            'long': 123,
+            'float': 123.123,
+            'bool': True,
+            'complex': 1j,
+            'list': [1, 2, 3],
+            'dict': {'foo': 'item_default'},
+        },
+        'str': None,
+        'int': None,
+        'long': None,
+        'float': None,
+        'bool': None,
+        'complex': None,
+        'list': None,
+        'dict': {'foo': None},
+    }

@@ -374,3 +374,60 @@ def example_data():
         },
         "items": [1, 2, 3]
     }
+
+
+@pytest.fixture
+def fallback_spec():
+    return YapconfSpec({
+        'defaults': {
+            'type': 'dict',
+            'items': {
+                'str': {'type': 'str', 'default': 'default_str'},
+                'int': {'type': 'int', 'default': 123},
+                'long': {'type': 'long', 'default': 123},
+                'float': {'type': 'float', 'default': 123.123},
+                'bool': {'type': 'bool', 'default': True},
+                'complex': {'type': 'complex', 'default': 1j},
+                'list': {
+                    'type': 'list',
+                    'default': [1, 2, 3],
+                    'items': {
+                        'list_item': {'type': 'int', 'default': 1}
+                    },
+                },
+                'dict': {
+                    'type': 'dict',
+                    'default': {'foo': 'dict_default'},
+                    'items': {
+                        'foo': {'type': 'str', 'default': 'item_default'}
+                    },
+                },
+            },
+        },
+        'str': {'type': 'str', 'fallback': 'defaults.str'},
+        'int': {'type': 'int', 'fallback': 'defaults.int'},
+        'long': {'type': 'long', 'fallback': 'defaults.long'},
+        'float': {'type': 'float', 'fallback': 'defaults.float'},
+        'bool': {'type': 'bool', 'fallback': 'defaults.bool'},
+        'complex': {'type': 'complex', 'fallback': 'defaults.complex'},
+        'list': {
+            'type': 'list',
+            'fallback': 'defaults.list',
+            'items': {
+                'list_item': {
+                    'type': 'int',
+                    'fallback': 'defaults.list.list_item'
+                },
+            },
+        },
+        'dict': {
+            'type': 'dict',
+            'fallback': 'defaults.dict',
+            'items': {
+                'foo': {
+                    'type': 'str',
+                    'fallback': 'defaults.dict.foo'
+                },
+            },
+        },
+    })

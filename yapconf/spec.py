@@ -8,7 +8,7 @@ import yapconf
 from box import Box
 from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
                                 YapconfSpecError)
-from yapconf.items import from_specification
+from yapconf.items import from_specification, YapconfDictItem
 from yapconf.sources import get_source
 
 
@@ -102,8 +102,18 @@ class YapconfSpec(object):
     @property
     def defaults(self):
         """dict: All defaults for items in the specification."""
-        return {item.name: item.default
-                for item in self._yapconf_items.values()}
+        return self._get_defaults(self._yapconf_items.values())
+
+    def _get_defaults(self, items):
+        defaults = {}
+        for item in items:
+            if isinstance(item, YapconfDictItem):
+                defaults[item.name] = self._get_defaults(
+                    item.children.values()
+                )
+            else:
+                defaults[item.name] = item.default
+        return defaults
 
     def add_arguments(self, parser, bootstrap=False):
         """Adds all items to the parser passed in.

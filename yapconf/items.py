@@ -198,7 +198,8 @@ class YapconfItem(object):
         alt_env_names=None,
         long_description=None,
         validator=None,
-        fallback=None
+        fallback=None,
+        cli_name=None
     ):
 
         self.name = name
@@ -223,6 +224,7 @@ class YapconfItem(object):
         self.choices = choices
         self.validator = validator
         self.fallback = fallback
+        self.cli_name = cli_name
 
         if self.prefix:
             self.fq_name = self.separator.join([self.prefix, self.name])
@@ -560,10 +562,11 @@ class YapconfItem(object):
 
     def _get_argparse_names(self, prefix_chars):
         cli_prefix = self._format_prefix_for_cli(prefix_chars)
+        name = self.cli_name or self.name
         if self.format_cli:
-            cli_name = yapconf.change_case(self.name, prefix_chars)
+            cli_name = yapconf.change_case(name, prefix_chars)
         else:
-            cli_name = self.name
+            cli_name = name
         if self.cli_short_name:
             return ["{0}{1}".format(cli_prefix, cli_name),
                     "{0}{1}".format(prefix_chars, self.cli_short_name)]
@@ -622,7 +625,8 @@ class YapconfBoolItem(YapconfItem):
         alt_env_names=None,
         long_description=None,
         validator=None,
-        fallback=None
+        fallback=None,
+        cli_name=None
     ):
         super(YapconfBoolItem, self).__init__(
             name,
@@ -648,7 +652,8 @@ class YapconfBoolItem(YapconfItem):
             alt_env_names,
             long_description,
             validator,
-            fallback
+            fallback,
+            cli_name
         )
 
     def add_argument(self, parser, bootstrap=False):
@@ -716,10 +721,12 @@ class YapconfBoolItem(YapconfItem):
 
     def _get_argparse_names(self, prefix_chars):
         cli_prefix = self._format_prefix_for_cli(prefix_chars)
+        name = self.cli_name or self.name
+
         if self.format_cli:
-            cli_name = yapconf.change_case(self.name, prefix_chars)
+            cli_name = yapconf.change_case(name, prefix_chars)
         else:
-            cli_name = self.name
+            cli_name = name
 
         if self.default:
             full_prefix = "{0}no{1}".format(cli_prefix, prefix_chars)
@@ -779,7 +786,8 @@ class YapconfListItem(YapconfItem):
         alt_env_names=None,
         long_description=None,
         validator=None,
-        fallback=None
+        fallback=None,
+        cli_name=None
     ):
 
         super(YapconfListItem, self).__init__(
@@ -806,7 +814,8 @@ class YapconfListItem(YapconfItem):
             alt_env_names,
             long_description,
             validator,
-            fallback
+            fallback,
+            cli_name
         )
 
         if len(self.children) != 1:
@@ -936,7 +945,8 @@ class YapconfDictItem(YapconfItem):
         alt_env_names=None,
         long_description=None,
         validator=None,
-        fallback=None
+        fallback=None,
+        cli_name=None
     ):
 
         super(YapconfDictItem, self).__init__(
@@ -963,7 +973,8 @@ class YapconfDictItem(YapconfItem):
             alt_env_names,
             long_description,
             validator,
-            fallback
+            fallback,
+            cli_name
         )
 
         if self.choices is not None:

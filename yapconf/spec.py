@@ -46,10 +46,10 @@ class YapconfSpec(object):
         self._encoding = encoding
 
         if self._file_type not in yapconf.FILE_TYPES:
-            raise YapconfSpecError('Unsupported file type: {0}.'
-                                   'Supported file types are: {1}'
-                                   .format(self._file_type,
-                                           yapconf.FILE_TYPES))
+            raise YapconfSpecError(
+                'Unsupported file type: {0}. Supported file types are: {1}'
+                .format(self._file_type, yapconf.FILE_TYPES)
+            )
 
         self._specification = self._load_specification(specification)
         self._env_prefix = env_prefix
@@ -69,10 +69,11 @@ class YapconfSpec(object):
             )
 
         if not isinstance(specification, dict):
-            raise YapconfSpecError('Specification must be a dictionary or a '
-                                   'filename which contains a loadable '
-                                   'dictionary. Supported file types are {0}'
-                                   .format(yapconf.FILE_TYPES))
+            raise YapconfSpecError(
+                'Specification must be a dictionary or a filename which '
+                'contains a loadable dictionary. Supported file types are {0}'
+                .format(yapconf.FILE_TYPES)
+            )
 
         self._validate_specification(specification)
         return specification
@@ -385,6 +386,15 @@ class YapconfSpec(object):
         for index, override in enumerate(args):
             source = self._extract_source(index, override)
             overrides.append(source.generate_override(self._separator))
+
+        # We manually generate defaults here so that it is easy to find out
+        # if there are defaults for fallbacks that should be applied.
+        overrides.append(
+            (
+                '__defaults__',
+                yapconf.flatten(self.defaults, separator=self._separator)
+            )
+        )
         return overrides
 
     def _explode_override(self, override):

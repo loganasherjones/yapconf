@@ -379,9 +379,10 @@ For each item in a specification, you can set any of these keys:
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 | validator         | ``None``         | A custom validator function. Must take exactly one value and return True/False.                                |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
-
+| fallback          | ``None``         | A fully qualified backup name to fallback to if no value could be found                                        |
++-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 
 
 .. _python-box: https://github.com/cdgriffith/Box
 .. _argparse: https://docs.python.org/3/library/argparse.html
-.. _yapconf  watcher issue: https://github.com/loganasherjones/yapconf/issues/36
+.. _yapconf watcher issue: https://github.com/loganasherjones/yapconf/issues/36

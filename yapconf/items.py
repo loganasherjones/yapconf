@@ -97,6 +97,7 @@ def _generate_item(name, item_dict, env_prefix,
     init_args['choices'] = item_dict.get('choices', None)
     init_args['alt_env_names'] = item_dict.get('alt_env_names', [])
     init_args['validator'] = item_dict.get('validator')
+    init_args['fallback'] = item_dict.get('fallback')
 
     if parent_names:
         init_args['prefix'] = separator.join(parent_names)
@@ -196,7 +197,8 @@ class YapconfItem(object):
         choices=None,
         alt_env_names=None,
         long_description=None,
-        validator=None
+        validator=None,
+        fallback=None
     ):
 
         self.name = name
@@ -220,6 +222,7 @@ class YapconfItem(object):
         self.apply_env_prefix = apply_env_prefix
         self.choices = choices
         self.validator = validator
+        self.fallback = fallback
 
         if self.prefix:
             self.fq_name = self.separator.join([self.prefix, self.name])
@@ -302,7 +305,7 @@ class YapconfItem(object):
             kwargs = self._get_argparse_kwargs(bootstrap)
             parser.add_argument(*args, **kwargs)
 
-    def get_config_value(self, overrides):
+    def get_config_value(self, overrides, skip_environment=False):
         """Get the configuration value from all overrides.
 
         Iterates over all overrides given to see if a value can be pulled
@@ -312,6 +315,7 @@ class YapconfItem(object):
         Args:
             overrides: A list of tuples where each tuple is a label and a
                 dictionary representing a configuration.
+            skip_environment: Skip looking through the environment.
 
         Returns:
             The converted configuration value.
@@ -325,28 +329,24 @@ class YapconfItem(object):
                 conversion, an exception was raised.
 
         """
-        label, override = self._find_label_and_override(overrides)
+        label, override, key = self._search_overrides(
+            overrides, skip_environment
+        )
 
         if override is None and self.default is None and self.required:
-            raise YapconfItemNotFound('Could not find config value for {0}'
-                                      .format(self.fq_name), self)
+            raise YapconfItemNotFound(
+                'Could not find config value for {0}'.format(self.fq_name),
+                self
+            )
 
         if override is None:
-            self.logger.info('Config value not found for {0}, falling back '
-                             'to default.'.format(self.name))
+            self.logger.debug(
+                'Config value not found for {0}, falling back to default.'
+                .format(self.name)
+            )
             value = self.default
-        elif label == 'ENVIRONMENT':
-            value = None
-            for name in self.all_env_names:
-                if (
-                    name in override and
-                    override[name] is not None and
-                    override[name] != ''
-                ):
-                    value = override[name]
-                    break
         else:
-            value = override[self.fq_name]
+            value = override[key]
 
         if value is None:
             return value
@@ -435,37 +435,49 @@ class YapconfItem(object):
                 return False
         return True
 
-    def _in_environment(self, env_dict):
+    def _name_in_environment(self, env_dict):
         for name in self.all_env_names:
             if (
                 name in env_dict and
                 env_dict[name] is not None and
                 env_dict[name] != ''
             ):
-                return True
-        return False
+                return name
+        return None
 
-    def _find_label_and_override(self, overrides, skip_environment=False):
+    def _search_overrides(self, overrides, skip_environment=False):
+        label_to_return, override_to_return, key_to_return = None, None, None
         for label, info in overrides:
-            if label == 'ENVIRONMENT':
-                if self._in_environment(info):
-                    if skip_environment:
-                        self.logger.info('Found possible value in the '
-                                         'environment for {0}, but for {1} '
-                                         'getting the value from the '
-                                         'environment is currently '
-                                         'unsupported. Skipping this entry.'
-                                         .format(self.name, self.item_type))
-                    else:
-                        self.logger.info('Found config value for {0} in {1}'
-                                         .format(self.name, label))
-                        return label, info
-            elif self.fq_name in info and info[self.fq_name] is not None:
-                self.logger.info('Found config value for {0} in {1}'
-                                 .format(self.fq_name, label))
-                return label, info
+            if label == 'ENVIRONMENT' and not skip_environment:
+                name = self._name_in_environment(info)
+                if name:
+                    self.logger.debug(
+                        'Found config value for {0} in {1}'
+                        .format(self.name, label)
+                    )
+                    return label, info, name
 
-        return None, None
+            elif self.fq_name in info and info[self.fq_name] is not None:
+                self.logger.debug(
+                    'Found config value for {0} in {1}'
+                    .format(self.fq_name, label)
+                )
+                return label, info, self.fq_name
+
+            elif (
+                self.fallback in info and
+                info[self.fallback] is not None and
+                not label_to_return
+            ):
+                self.logger.debug(
+                    'Found fallback value for {0} in {1}'
+                    .format(self.fq_name, label)
+                )
+                label_to_return = label
+                override_to_return = info
+                key_to_return = self.fallback
+
+        return label_to_return, override_to_return, key_to_return
 
     def _format_prefix_for_cli(self, chars):
         expected_prefix = "{0}{0}".format(chars)
@@ -609,7 +621,8 @@ class YapconfBoolItem(YapconfItem):
         choices=None,
         alt_env_names=None,
         long_description=None,
-        validator=None
+        validator=None,
+        fallback=None
     ):
         super(YapconfBoolItem, self).__init__(
             name,
@@ -634,7 +647,8 @@ class YapconfBoolItem(YapconfItem):
             choices,
             alt_env_names,
             long_description,
-            validator
+            validator,
+            fallback
         )
 
     def add_argument(self, parser, bootstrap=False):
@@ -764,7 +778,8 @@ class YapconfListItem(YapconfItem):
         choices=None,
         alt_env_names=None,
         long_description=None,
-        validator=None
+        validator=None,
+        fallback=None
     ):
 
         super(YapconfListItem, self).__init__(
@@ -790,7 +805,8 @@ class YapconfListItem(YapconfItem):
             choices,
             alt_env_names,
             long_description,
-            validator
+            validator,
+            fallback
         )
 
         if len(self.children) != 1:
@@ -803,25 +819,10 @@ class YapconfListItem(YapconfItem):
     def _setup_env_name(self, env_name):
         return None
 
-    def get_config_value(self, overrides):
-        label, override = self._find_label_and_override(overrides,
-                                                        skip_environment=True)
-
-        if override is None and self.default is None and self.required:
-            raise YapconfItemNotFound('Could not find config value for {0}'
-                                      .format(self.fq_name), self)
-
-        if override is None:
-            values = self.default
-        else:
-            values = override[self.fq_name]
-
-        if values is None:
-            return None
-
-        converted_value = self.convert_config_value(values, label)
-        self._validate_value(converted_value)
-        return converted_value
+    def get_config_value(self, overrides, skip_environment=True):
+        return super(YapconfListItem, self).get_config_value(
+            overrides, skip_environment
+        )
 
     def convert_config_value(self, value, label):
         try:
@@ -934,7 +935,8 @@ class YapconfDictItem(YapconfItem):
         choices=None,
         alt_env_names=None,
         long_description=None,
-        validator=None
+        validator=None,
+        fallback=None
     ):
 
         super(YapconfDictItem, self).__init__(
@@ -960,7 +962,8 @@ class YapconfDictItem(YapconfItem):
             choices,
             alt_env_names,
             long_description,
-            validator
+            validator,
+            fallback
         )
 
         if self.choices is not None:
@@ -997,9 +1000,11 @@ class YapconfDictItem(YapconfItem):
             for child in self.children.values():
                 child.add_argument(parser, bootstrap)
 
-    def get_config_value(self, overrides):
+    def get_config_value(self, overrides, skip_environment=False):
         converted_value = {
-            child_name: child_item.get_config_value(overrides)
+            child_name: child_item.get_config_value(
+                overrides, skip_environment
+            )
             for child_name, child_item in six.iteritems(self.children)
         }
         self._validate_value(converted_value)
@@ -1028,24 +1033,3 @@ class YapconfDictItem(YapconfItem):
             return False
         else:
             return super(YapconfDictItem, self)._has_cli_support()
-
-    def _find_all_overrides(self, overrides):
-        nested_overrides = []
-        for label, info in overrides:
-            if label == 'ENVIRONMENT':
-                if self.env_name in info:
-                    self.logger.info('Found possible value in the '
-                                     'environment for {0}, but the item is '
-                                     'a dict. Getting dict values from the '
-                                     'environment is currently '
-                                     'unsupported. Skipping this entry.'
-                                     .format(self.name))
-                nested_overrides.append((label, info))
-            elif self.name in info:
-                if not isinstance(info[self.name], dict):
-                    raise YapconfValueError("Invalid override found in {0}. "
-                                            "It contained a key {1} which we "
-                                            "expected to be a dictionary."
-                                            .format(label, self.name))
-                nested_overrides.append((label, info[self.name]))
-        return nested_overrides

@@ -570,3 +570,144 @@ def test_load_kubernetes(simple_spec, key, config_type, formatter):
         'my_bool': True,
         'my_complex': 1j,
     }
+
+
+def test_defaults(fallback_spec):
+    assert fallback_spec.defaults == {
+        'defaults': {
+            'str': 'default_str',
+            'int': 123,
+            'long': 123,
+            'float': 123.123,
+            'bool': True,
+            'complex': 1j,
+            'list': [1, 2, 3],
+            'dict': {'foo': 'item_default'},
+        },
+        'str': None,
+        'int': None,
+        'long': None,
+        'float': None,
+        'bool': None,
+        'complex': None,
+        'list': None,
+        'dict': {'foo': None},
+    }
+
+
+@pytest.mark.parametrize('configs,expected', [
+    (
+        [],
+        {
+            'defaults': {
+                'str': 'default_str',
+                'int': 123,
+                'long': long(123),
+                'float': 123.123,
+                'bool': True,
+                'complex': 1j,
+                'list': [1, 2, 3],
+                'dict': {'foo': 'item_default'},
+            },
+            'str': 'default_str',
+            'int': 123,
+            'long': long(123),
+            'float': 123.123,
+            'bool': True,
+            'complex': 1j,
+            'list': [1, 2, 3],
+            'dict': {'foo': 'item_default'},
+        }
+    ),
+    (
+        [
+            {
+                'defaults': {
+                    'str': 'fallback_str',
+                    'int': 456,
+                    'long': 456,
+                    'float': 456.456,
+                    'bool': True,
+                    'complex': 4j,
+                    'list': [4, 5, 6],
+                    'dict': {'foo': 'fallback_item'}
+                }
+            },
+            {
+                'str': 'override_str',
+                'int': 789,
+                'long': 789,
+                'float': 789.789,
+                'bool': False,
+                'complex': 7j,
+                'list': [7, 8, 9],
+                'dict': {'foo': 'override_item'}
+            }
+        ],
+        {
+            'defaults': {
+                'str': 'fallback_str',
+                'int': 456,
+                'long': long(456),
+                'float': 456.456,
+                'bool': True,
+                'complex': 4j,
+                'list': [4, 5, 6],
+                'dict': {'foo': 'fallback_item'},
+            },
+            'str': 'override_str',
+            'int': 789,
+            'long': long(789),
+            'float': 789.789,
+            'bool': False,
+            'complex': 7j,
+            'list': [7, 8, 9],
+            'dict': {'foo': 'override_item'},
+        }
+    ),
+    (
+        [
+            {
+                'defaults': {
+                    'str': 'fallback_str',
+                    'int': 456,
+                    'long': 456,
+                    'float': 456.456,
+                    'bool': True,
+                    'complex': 4j,
+                    'list': [4, 5, 6],
+                    'dict': {'foo': 'fallback_item'}
+                }
+            },
+            {
+                'int': 789,
+                'long': 789,
+                'bool': False,
+                'list': [7, 8, 9],
+            }
+        ],
+        {
+            'defaults': {
+                'str': 'fallback_str',
+                'int': 456,
+                'long': long(456),
+                'float': 456.456,
+                'bool': True,
+                'complex': 4j,
+                'list': [4, 5, 6],
+                'dict': {'foo': 'fallback_item'},
+            },
+            'str': 'fallback_str',
+            'int': 789,
+            'long': long(789),
+            'float': 456.456,
+            'bool': False,
+            'complex': 4j,
+            'list': [7, 8, 9],
+            'dict': {'foo': 'fallback_item'},
+        }
+    ),
+])
+def test_fallbacks(fallback_spec, configs, expected):
+    config = fallback_spec.load_config(*configs)
+    assert config == expected

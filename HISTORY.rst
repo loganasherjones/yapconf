@@ -7,6 +7,7 @@ History
 * Fixed an issue where utf-8 migrations would break
 * Added support for etcd
 * Added support for kubernetes
+* Added support for fallbacks for config values
 
 0.2.4 (2018-05-21)
 ------------------

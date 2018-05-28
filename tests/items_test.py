@@ -270,41 +270,64 @@ def test_update_default(simple_item, current_default, new_default,
     assert simple_item.default == expected
 
 
-@pytest.mark.parametrize('type,required,default,short,args,expected', [
-    ('str', True, 'default_value', None, ['--foo', 'foo_value'], 'foo_value'),
-    ('str', True, 'default_value', None, [], None),
-    ('str', False, None, None, [], None),
-    ('str', True, None, 'f', ['-f', 'foo_value'], 'foo_value'),
-    ('int', True, None, 'f', ['-f', '1'], 1),
-    ('long', True, None, 'f', ['-f', '1'], long(1)),
-    ('float', True, None, 'f', ['-f', '1.23'], 1.23),
-    ('complex', True, None, 'f', ['-f', '2j'], 2j),
+@pytest.mark.parametrize('type,required,default,short,name,args,expected', [
+    (
+        'str',
+        True,
+        'default_value',
+        None,
+        None,
+        ['--foo', 'foo_value'],
+        'foo_value'
+    ),
+    ('str', True, 'default_value', None, None, [], None),
+    ('str', False, None, None, None, [], None),
+    ('str', True, None, 'f', None, ['-f', 'foo_value'], 'foo_value'),
+    ('str', True, None, 'f', 'alt', ['--alt', 'foo_value'], 'foo_value'),
+    ('int', True, None, 'f', None, ['-f', '1'], 1),
+    ('long', True, None, 'f', None, ['-f', '1'], long(1)),
+    ('float', True, None, 'f', None, ['-f', '1.23'], 1.23),
+    ('complex', True, None, 'f', None, ['-f', '2j'], 2j),
 ])
-def test_add_argument(simple_item, type, required,
-                      default, short, args, expected):
+def test_add_argument(
+    simple_item,
+    type,
+    required,
+    default,
+    short,
+    name,
+    args,
+    expected
+):
     simple_item.item_type = type
     simple_item.required = required
     simple_item.default = default
     simple_item.cli_short_name = short
+    simple_item.cli_name = name
     parser = ArgumentParser()
     simple_item.add_argument(parser)
     values = vars(parser.parse_args(args))
     assert values[simple_item.name] == expected
 
 
-@pytest.mark.parametrize('default,short_name,args,expected', [
-    (True, None, ['--no-my-bool'], False),
-    (False, None, ['--my-bool'], True),
-    (None, None, ['--my-bool'], True),
-    (None, None, ['--no-my-bool'], False),
-    (None, 'b', ['--no-b'], False),
-    (None, 'b', ['--b'], True),
-    (True, None, [], None),
-    (False, None, [], None),
+@pytest.mark.parametrize('default,short_name,cli_name,args,expected', [
+    (True, None, None, ['--no-my-bool'], False),
+    (False, None, None, ['--my-bool'], True),
+    (None, None, None, ['--my-bool'], True),
+    (None, None, None, ['--no-my-bool'], False),
+    (None, None, 'alt', ['--no-alt'], False),
+    (None, None, 'alt', ['--alt'], True),
+    (None, 'b', None, ['--no-b'], False),
+    (None, 'b', None, ['--b'], True),
+    (True, None, None, [], None),
+    (False, None, None, [], None),
 ])
-def test_add_bool_argument(bool_item, default, short_name, args, expected):
+def test_add_bool_argument(
+    bool_item, default, short_name, cli_name, args, expected
+):
     bool_item.default = default
     bool_item.cli_short_name = short_name
+    bool_item.cli_name = cli_name
     parser = ArgumentParser()
     bool_item.add_argument(parser)
     values = vars(parser.parse_args(args))

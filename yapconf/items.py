@@ -173,67 +173,42 @@ class YapconfItem(object):
             initialization results in an invalid item.
     """
 
-    def __init__(
-        self,
-        name,
-        item_type='str',
-        default=None,
-        env_name=None,
-        description=None,
-        required=True,
-        cli_short_name=None,
-        cli_choices=None,
-        previous_names=None,
-        previous_defaults=None,
-        children=None,
-        cli_expose=True,
-        separator='.',
-        prefix=None,
-        bootstrap=False,
-        format_cli=True,
-        format_env=True,
-        env_prefix=None,
-        apply_env_prefix=True,
-        choices=None,
-        alt_env_names=None,
-        long_description=None,
-        validator=None,
-        fallback=None,
-        cli_name=None
-    ):
-
+    def __init__(self, name, **kwargs):
         self.name = name
-        self.item_type = item_type
-        self.default = default
-        self.description = description
-        self.long_description = long_description
-        self.required = required
-        self.cli_short_name = cli_short_name
-        self.cli_choices = cli_choices or []
-        self.previous_names = previous_names or []
-        self.previous_defaults = previous_defaults or []
-        self.children = children or {}
-        self.cli_expose = cli_expose
-        self.separator = separator
-        self.prefix = prefix
-        self.bootstrap = bootstrap
-        self.format_env = format_env
-        self.format_cli = format_cli
-        self.env_prefix = env_prefix or ''
-        self.apply_env_prefix = apply_env_prefix
-        self.choices = choices
-        self.validator = validator
-        self.fallback = fallback
-        self.cli_name = cli_name
+        self.item_type = kwargs.get('item_type', 'str')
+        self.default = kwargs.get('default', None)
+        self.required = kwargs.get('required', True)
+        self.separator = kwargs.get('separator', '.')
+        self.validator = kwargs.get('validator')
+        self.choices = kwargs.get('choices')
+        self.prefix = kwargs.get('prefix', None)
+        self.bootstrap = kwargs.get('bootstrap', False)
+        self.children = kwargs.get('children') or {}
+        self.fallback = kwargs.get('fallback')
+
+        self.description = kwargs.get('description', None)
+        self.long_description = kwargs.get('long_description', None)
+
+        self.previous_names = kwargs.get('previous_names') or []
+        self.previous_defaults = kwargs.get('previous_defaults') or []
+
+        self.format_cli = kwargs.get('format_cli', True)
+        self.cli_short_name = kwargs.get('cli_short_name', None)
+        self.cli_choices = kwargs.get('cli_choices') or []
+        self.cli_name = kwargs.get('cli_name')
+        self.cli_expose = kwargs.get('cli_expose', True)
 
         if self.prefix:
             self.fq_name = self.separator.join([self.prefix, self.name])
         else:
             self.fq_name = self.name
 
-        self.env_name = self._setup_env_name(env_name)
+        self.format_env = kwargs.get('format_env', True)
+        self.env_prefix = kwargs.get('env_prefix') or ''
+        self.apply_env_prefix = kwargs.get('apply_env_prefix', True)
+        self.env_name = self._setup_env_name(kwargs.get('env_name'))
         self.alt_env_names = []
-        for alt_env_name in alt_env_names or []:
+        for alt_env_name in kwargs.get('alt_env_names') or []:
             alt_name = self._setup_env_name(alt_env_name)
             if alt_name is not None:
                 self.alt_env_names.append(alt_name)
@@ -600,61 +575,9 @@ class YapconfBoolItem(YapconfItem):
     # Values to interpret as False (not case sensitive)
     FALSY_VALUES = ('n', 'no', 'f', 'false', '0', 0, False, )
 
-    def __init__(
-        self,
-        name,
-        item_type='bool',
-        default=None,
-        env_name=None,
-        description=None,
-        required=True,
-        cli_short_name=None,
-        cli_choices=None,
-        previous_names=None,
-        previous_defaults=None,
-        children=None,
-        cli_expose=True,
-        separator='.',
-        prefix=None,
-        bootstrap=False,
-        format_cli=True,
-        format_env=True,
-        env_prefix=None,
-        apply_env_prefix=True,
-        choices=None,
-        alt_env_names=None,
-        long_description=None,
-        validator=None,
-        fallback=None,
-        cli_name=None
-    ):
-        super(YapconfBoolItem, self).__init__(
-            name,
-            item_type,
-            default,
-            env_name,
-            description,
-            required,
-            cli_short_name,
-            cli_choices,
-            previous_names,
-            previous_defaults,
-            children,
-            cli_expose,
-            separator,
-            prefix,
-            bootstrap,
-            format_cli,
-            format_env,
-            env_prefix,
-            apply_env_prefix,
-            choices,
-            alt_env_names,
-            long_description,
-            validator,
-            fallback,
-            cli_name
-        )
+    def __init__(self, name, **kwargs):
+        kwargs['item_type'] = 'bool'
+        super(YapconfBoolItem, self).__init__(name, **kwargs)
 
     def add_argument(self, parser, bootstrap=False):
         """Add boolean item as an argument to the given parser.
@@ -761,69 +684,16 @@ class YapconfBoolItem(YapconfItem):
 class YapconfListItem(YapconfItem):
     """A YapconfItem for capture list-specific behavior"""
 
-    def __init__(
-        self,
-        name,
-        item_type='list',
-        default=None,
-        env_name=None,
-        description=None,
-        required=True,
-        cli_short_name=None,
-        cli_choices=None,
-        previous_names=None,
-        previous_defaults=None,
-        children=None,
-        cli_expose=True,
-        separator='.',
-        prefix=None,
-        bootstrap=False,
-        format_cli=True,
-        format_env=True,
-        env_prefix=None,
-        apply_env_prefix=True,
-        choices=None,
-        alt_env_names=None,
-        long_description=None,
-        validator=None,
-        fallback=None,
-        cli_name=None
-    ):
-
-        super(YapconfListItem, self).__init__(
-            name,
-            item_type,
-            default,
-            env_name,
-            description,
-            required,
-            cli_short_name,
-            cli_choices,
-            previous_names,
-            previous_defaults,
-            children,
-            cli_expose,
-            separator,
-            prefix,
-            bootstrap,
-            format_cli,
-            format_env,
-            env_prefix,
-            apply_env_prefix,
-            choices,
-            alt_env_names,
-            long_description,
-            validator,
-            fallback,
-            cli_name
-        )
+    def __init__(self, name, **kwargs):
+        kwargs['item_type'] = 'list'
+        super(YapconfListItem, self).__init__(name, **kwargs)
 
         if len(self.children) != 1:
             raise YapconfListItemError("List Items can only have a "
                                        "single child item. Got {0} children"
                                        .format(len(self.children)))
 
-        self.child = list(children.values())[0]
+        self.child = list(self.children.values())[0]
 
     def _setup_env_name(self, env_name):
         return None
@@ -920,62 +790,9 @@ class YapconfListItem(YapconfItem):
 class YapconfDictItem(YapconfItem):
     """A YapconfItem for capture dict-specific behavior"""
 
-    def __init__(
-        self,
-        name,
-        item_type='dict',
-        default=None,
-        env_name=None,
-        description=None,
-        required=True,
-        cli_short_name=None,
-        cli_choices=None,
-        previous_names=None,
-        previous_defaults=None,
-        children=None,
-        cli_expose=True,
-        separator='.',
-        prefix=None,
-        bootstrap=False,
-        format_cli=True,
-        format_env=True,
-        env_prefix=None,
-        apply_env_prefix=True,
-        choices=None,
-        alt_env_names=None,
-        long_description=None,
-        validator=None,
-        fallback=None,
-        cli_name=None
-    ):
-
-        super(YapconfDictItem, self).__init__(
-            name,
-            item_type,
-            default,
-            env_name,
-            description,
-            required,
-            cli_short_name,
-            cli_choices,
-            previous_names,
-            previous_defaults,
-            children,
-            cli_expose,
-            separator,
-            prefix,
-            bootstrap,
-            format_cli,
-            format_env,
-            env_prefix,
-            apply_env_prefix,
-            choices,
-            alt_env_names,
-            long_description,
-            validator,
-            fallback,
-            cli_name
-        )
+    def __init__(self, name, **kwargs):
+        kwargs['item_type'] = 'dict'
+        super(YapconfDictItem, self).__init__(name, **kwargs)
 
         if self.choices is not None:
             raise YapconfDictItemError('Dict items {0} cannot have choices '

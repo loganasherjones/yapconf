@@ -101,6 +101,14 @@ class YapconfSpec(object):
                 self._validate_specification(nested_items)
 
     @property
+    def items(self):
+        return self._yapconf_items.values()
+
+    @property
+    def sources(self):
+        return self._sources.values()
+
+    @property
     def defaults(self):
         """dict: All defaults for items in the specification."""
         return self._get_defaults(self._yapconf_items.values())

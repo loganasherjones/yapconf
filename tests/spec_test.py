@@ -711,3 +711,42 @@ def test_defaults(fallback_spec):
 def test_fallbacks(fallback_spec, configs, expected):
     config = fallback_spec.load_config(*configs)
     assert config == expected
+
+
+def test_generate_documentation_file(real_world_spec, tmpdir):
+    new_path = tmpdir.join('real_world_doc.md')
+    new_path.ensure()
+    tmp_path = os.path.join(current_dir, 'files', 'real_world', 'doc.md')
+
+    real_world_spec.add_source(
+        'Source 1 Label', 'etcd', client=Mock(spec=yapconf.etcd_client.Client)
+    )
+    real_world_spec.add_source('Source 2 Label', 'dict', data={})
+    real_world_spec.add_source('Source 3 Label', 'environment')
+    real_world_spec.add_source('Source 4 Label', 'json', data={})
+    real_world_spec.add_source(
+        'Source 5 Label', 'json', filename='/path/to/file.json'
+    )
+    real_world_spec.add_source(
+        'Source 6 Label',
+        'kubernetes',
+        client=Mock(spec=yapconf.kubernetes_client.CoreV1Api),
+        key='key_name',
+        name='config_map_name',
+        namespace='config_map_namespace',
+        config_type='json'
+    )
+    real_world_spec.add_source(
+        'Source 7 Label', 'yaml', filename='/path/to/file.yaml'
+    )
+    real_world_spec.generate_documentation(
+        'My App Name', output_file_name=str(new_path)
+    )
+
+    with new_path.open() as fp:
+        generated_docs = fp.read()
+
+    with open(tmp_path) as fp:
+        expected = fp.read()
+
+    assert generated_docs == expected

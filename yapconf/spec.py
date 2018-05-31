@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+import sys
 
 import six
 
 import yapconf
 from box import Box
+from yapconf.docs import generate_markdown_doc
 from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
                                 YapconfSpecError)
-from yapconf.items import from_specification, YapconfDictItem
+from yapconf.items import YapconfDictItem, from_specification
 from yapconf.sources import get_source
+
+if sys.version_info.major < 3:
+    from io import open
 
 
 class YapconfSpec(object):
@@ -102,11 +107,11 @@ class YapconfSpec(object):
 
     @property
     def items(self):
-        return self._yapconf_items.values()
+        return self._yapconf_items
 
     @property
     def sources(self):
-        return self._sources.values()
+        return self._sources
 
     @property
     def defaults(self):
@@ -215,6 +220,35 @@ class YapconfSpec(object):
                                           "name of {1}".format(key, key), None)
 
             item.update_default(value, respect_none)
+
+    def generate_documentation(self, app_name, **kwargs):
+        """Generate documentation for this specification.
+
+        Documentation is generated in Markdown format. An example
+        of the generated documentation can be found at:
+
+        https://github.com/loganasherjones/yapconf/blob/master/example/doc.md
+
+        Args:
+            app_name (str): The name of your application.
+
+        Keyword Args:
+            output_file_name (str): If provided, will write to this file.
+            encoding (str): The encoding to use for the output file. Default
+            is utf-8.
+
+        Returns:
+            A string representation of the documentation.
+
+        """
+        output_file = kwargs.get('output_file_name')
+        encoding = kwargs.get('encoding', 'utf-8')
+        doc_string = generate_markdown_doc(app_name, self)
+        if output_file:
+            with open(output_file, 'w', encoding=encoding) as doc_file:
+                doc_file.write(doc_string)
+
+        return doc_string
 
     def load_config(self, *args, **kwargs):
         """Load a config based on the arguments passed in.

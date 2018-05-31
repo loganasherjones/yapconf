@@ -6,6 +6,8 @@ file:
     env_name: MY_APP_CONFIG_FILE
     cli_short_name: f
     previous_defaults: ./file.yaml
+    description: Description of file here
+    long_description: Long description goes here.
 
 web_port:
     type: int
@@ -17,6 +19,8 @@ web_port:
     previous_defaults:
     - 1234
     - 2345
+    description: Description of web_port here
+    long_description: Long description goes here.
 
 emoji:
     type: str
@@ -24,6 +28,8 @@ emoji:
     default: 🐍
     previous_defaults:
     - 💩
+    description: Description of emoji here
+    long_description: Long description goes here.
 
 ssl:
     type: dict
@@ -35,12 +41,16 @@ ssl:
             default: /etc/certs/private.key
             previous_names:
             - web.key
+            description: Description of ssl.private_key here
+            long_description: Long description goes here.
         public_key:
             type: str
             required: true
             default: /etc/certs/public.crt
             previous_names:
             - web.crt
+            description: Description of ssl.public_key here
+            long_description: Long description goes here.
 
 database:
     type: dict
@@ -54,21 +64,29 @@ database:
             - db_name
             previous_defaults:
             - test
+            description: Description of database.name here
+            long_description: Long description goes here.
         host:
             type: str
             required: true
             default: localhost
             previous_names:
             - db_host
+            description: Description of database.host here
+            long_description: Long description goes here.
         port:
             type: int
             required: true
             default: 3306
             previous_names:
             - db_port
+            description: Description of database.port here
+            long_description: Long description goes here.
         verbose:
             type: bool
             required: true
             default: false
             previous_defaults:
             - true
+            description: Description of database.verbose here
+            long_description: Long description goes here.

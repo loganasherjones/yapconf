@@ -104,7 +104,7 @@ The ``json`` source type can specify either a JSON string or a JSON file to load
 kubernetes
 ----------
 
-The ``kubernetes`` source type sp77ecifies that yapconf should load the configuration
+The ``kubernetes`` source type specifies that yapconf should load the configuration
 from a `kubernetes ConfigMap`_.  In order to use the ``kubernetes`` capabilities in yapconf,
 you need to install the package yapconf uses for kubernetes:
 
@@ -147,7 +147,13 @@ you need to install the package yapconf uses for kubernetes:
 yaml
 ----
 
-The ``yaml`` source type lets you specify a YAML file to load.
+The ``yaml`` source type lets you specify a YAML file to load. In order to use ``yaml``
+capabilities in yapconf, you need to install the package yapconf uses for ``yaml``:
+
+
+.. code-block:: console
+
+    $ pip install yapconf[yaml]
 
 **Example:**
 

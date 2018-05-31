@@ -4,10 +4,11 @@ History
 
 0.3.0 TBD
 ---------
-* Fixed an issue where utf-8 migrations would break
-* Added support for etcd
-* Added support for kubernetes
-* Added support for fallbacks for config values
+* Fixed an issue where utf-8 migrations would break (#46)
+* Added support for etcd (#47)
+* Added support for kubernetes (#47)
+* Added support for fallbacks for config values (#45)
+* Added the ability to generate documentation for your configuration (#63)
 
 0.2.4 (2018-05-21)
 ------------------

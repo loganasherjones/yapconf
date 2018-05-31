@@ -231,6 +231,10 @@ class YapconfItem(object):
         else:
             return []
 
+    @property
+    def cli_names(self):
+        return "/".join(self._get_argparse_names('-'))
+
     def update_default(self, new_default, respect_none=False):
         """Update our current default with the new_default.
 

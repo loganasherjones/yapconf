@@ -90,6 +90,17 @@ You can also add these arguments to the command line very easily
     # Now you can load these via load_config:
     config = my_spec.load_config(cli_args, 'config.yaml', 'environment')
 
+Want to generate documentation for your configuration? We've got you covered!
+
+.. code-block:: python
+
+    # Show me some sweet Markdown documentation
+    my_spec(spec.generate_documentation())
+
+    # Or write it to a file
+    spec.generate_documentation(output_file_name='configuration_docs.md')
+
+
 For more detailed information and better walkthroughs, checkout the documentation!
 
 Documentation

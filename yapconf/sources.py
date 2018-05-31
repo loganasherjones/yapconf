@@ -144,18 +144,19 @@ class DictConfigSource(ConfigSource):
     """
 
     def __init__(self, label, data):
-        self._data = data
+        self.data = data
+        self.type = 'dict'
         super(DictConfigSource, self).__init__(label)
 
     def validate(self):
-        if not isinstance(self._data, dict):
+        if not isinstance(self.data, dict):
             raise YapconfSourceError(
                 'Invalid source provided. %s provided data but it was not a '
-                'dictionary. Got: %s' % (self.label, self._data)
+                'dictionary. Got: %s' % (self.label, self.data)
             )
 
     def _get_data(self):
-        return self._data
+        return self.data
 
 
 class JsonConfigSource(ConfigSource):
@@ -171,26 +172,27 @@ class JsonConfigSource(ConfigSource):
     """
 
     def __init__(self, label, data=None, filename=None, **kwargs):
-        self._data = data
-        self._filename = filename
+        self.type = 'json'
+        self.data = data
+        self.filename = filename
         self._load_kwargs = kwargs
         if 'encoding' not in self._load_kwargs:
             self._load_kwargs['encoding'] = 'utf-8'
         super(JsonConfigSource, self).__init__(label)
 
     def validate(self):
-        if self._data is None and self._filename is None:
+        if self.data is None and self.filename is None:
             raise YapconfSourceError(
                 'Invalid source (%s). No data or filename was provided for a '
                 'JSON config source.' % self.label
             )
 
     def _get_data(self):
-        if self._data is not None:
-            return json.loads(self._data, **self._load_kwargs)
+        if self.data is not None:
+            return json.loads(self.data, **self._load_kwargs)
 
         return yapconf.load_file(
-            self._filename,
+            self.filename,
             file_type='json',
             klazz=YapconfSourceError,
             load_kwargs=self._load_kwargs
@@ -208,12 +210,13 @@ class YamlConfigSource(ConfigSource):
     """
 
     def __init__(self, label, filename, **kwargs):
-        self._filename = filename
+        self.type = 'yaml'
+        self.filename = filename
         self._encoding = kwargs.get('encoding', 'utf-8')
         super(YamlConfigSource, self).__init__(label)
 
     def validate(self):
-        if self._filename is None:
+        if self.filename is None:
             raise YapconfSourceError(
                 'Invalid source (%s). No filename was provided for a YAML '
                 'config source.' % self.label
@@ -221,7 +224,7 @@ class YamlConfigSource(ConfigSource):
 
     def _get_data(self):
         return yapconf.load_file(
-            self._filename,
+            self.filename,
             file_type='yaml',
             klazz=YapconfSourceError,
             open_kwargs={'encoding': self._encoding}
@@ -233,6 +236,7 @@ class EnvironmentConfigSource(DictConfigSource):
 
     def __init__(self, label):
         super(EnvironmentConfigSource, self).__init__(label, os.environ.copy())
+        self.type = 'environment'
 
 
 class EtcdConfigSource(ConfigSource):
@@ -246,26 +250,27 @@ class EtcdConfigSource(ConfigSource):
     """
 
     def __init__(self, label, client, key='/'):
-        self._client = client
-        self._key = key
+        self.type = 'etcd'
+        self.client = client
+        self.key = key
         super(EtcdConfigSource, self).__init__(label)
 
     def validate(self):
-        if not isinstance(self._client, yapconf.etcd_client.Client):
+        if not isinstance(self.client, yapconf.etcd_client.Client):
             raise YapconfSourceError(
                 'Invalid source (%s). Client must be supplied and must be of '
                 'type %s. Got type: %s' %
                 (self.label,
                  type(yapconf.etcd_client.Client),
-                 type(self._client))
+                 type(self.client))
             )
 
     def _get_data(self):
-        result = self._client.read(key=self._key, recursive=True)
+        result = self.client.read(key=self.key, recursive=True)
         if not result.dir:
             raise YapconfLoadError(
                 'Loaded key %s, but it was not a directory according to etcd.'
-                % self._key
+                % self.key
             )
 
         data = {}
@@ -283,7 +288,7 @@ class EtcdConfigSource(ConfigSource):
                 data[key] = {}
 
     def _extract_keys(self, fq_key):
-        return fq_key.lstrip(self._key).split('/')
+        return fq_key.lstrip(self.key).split('/')
 
 
 class KubernetesConfigSource(ConfigSource):
@@ -303,56 +308,57 @@ class KubernetesConfigSource(ConfigSource):
     """
 
     def __init__(self, label, client, name, **kwargs):
-        self._client = client
-        self._name = name
-        self._namespace = kwargs.get('namespace') or 'default'
-        self._key = kwargs.get('key')
-        self._config_type = kwargs.get('config_type') or 'json'
+        self.type = 'kubernetes'
+        self.client = client
+        self.name = name
+        self.namespace = kwargs.get('namespace') or 'default'
+        self.key = kwargs.get('key')
+        self.config_type = kwargs.get('config_type') or 'json'
         super(KubernetesConfigSource, self).__init__(label)
 
     def validate(self):
         if (yapconf.kubernetes_client and
-                not isinstance(self._client,
+                not isinstance(self.client,
                                yapconf.kubernetes_client.CoreV1Api)):
             raise YapconfSourceError(
                 'Invalid source (%s). Client must be supplied and must be of '
                 'type %s. Got type: %s' %
                 (self.label,
                  type(yapconf.kubernetes_client.CoreV1Api),
-                 type(self._client))
+                 type(self.client))
             )
 
-        if self._config_type == 'yaml' and not yapconf.yaml_support:
+        if self.config_type == 'yaml' and not yapconf.yaml_support:
             raise YapconfSourceError(
                 'Kubernetes config source specified that the configmap '
                 'contained a yaml config. In order to support yaml loading, '
                 'you will need to `pip install yapconf[yaml]`.'
             )
 
-        if self._config_type not in yapconf.FILE_TYPES:
+        if self.config_type not in yapconf.FILE_TYPES:
             raise YapconfSourceError(
                 'Invalid config type specified for a kubernetes config. %s is '
                 'not supported. Supported types are %s' %
-                (self._name, yapconf.FILE_TYPES)
+                (self.name, yapconf.FILE_TYPES)
             )
 
     def _get_data(self):
-        result = self._client.read_namespaced_config_map(self._name,
-                                                         self._namespace)
-        if self._key is None:
+        result = self.client.read_namespaced_config_map(self.name,
+                                                        self.namespace)
+        if self.key is None:
             return result.data
 
-        if self._key not in result.data:
+        if self.key not in result.data:
             raise YapconfLoadError(
                 'Loaded configmap %s, but could not find key %s in the data '
-                'portion of the configmap.' % self._key
+                'portion of the configmap.' % self.key
             )
 
-        nested_config = result.data[self._key]
-        if self._config_type == 'json':
+        nested_config = result.data[self.key]
+        if self.config_type == 'json':
             return json.loads(nested_config, )
-        elif self._config_type == 'yaml':
+        elif self.config_type == 'yaml':
             return yapconf.yaml.load(nested_config)
         else:
             raise NotImplementedError('Cannot load config with type %s' %
-                                      self._config_type)
+                                      self.config_type)

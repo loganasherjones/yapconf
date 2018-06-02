@@ -352,6 +352,11 @@ class EtcdConfigSource(ConfigSource):
 
         return data
 
+    def _watch(self, handler, data):
+        while self._continue:
+            self.client.read(key=self.key, wait=True, recursive=True)
+            handler.handle_config_change(self.get_data())
+
     def _add_value(self, data, keys, value):
         for i, key in enumerate(keys):
             if i == len(keys) - 1:

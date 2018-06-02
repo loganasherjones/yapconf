@@ -8,6 +8,8 @@ import threading
 
 import six
 import time
+
+from kubernetes import watch
 from watchdog.observers import Observer
 
 import yapconf
@@ -439,3 +441,22 @@ class KubernetesConfigSource(ConfigSource):
         else:
             raise NotImplementedError('Cannot load config with type %s' %
                                       self.config_type)
+
+    def _watch(self, handler, data):
+        w = watch.Watch()
+        for event in w.stream(
+            self.client.list_namespaced_config_map,
+            namespace=self.namespace
+        ):
+            config_map = event['object']
+            if config_map.metadata.name != self.name:
+                continue
+
+            if event['type'] == 'DELETED':
+                raise YapconfSourceError(
+                    'Kubernetes config watcher died. The configmap %s was '
+                    'deleted.' % self.name
+                )
+
+            if event['type'] == 'MODIFIED':
+                handler.handle_config_change(self.get_data())

@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 import abc
+import copy
+import hashlib
 import json
 import os
+import threading
 
 import six
+import time
+from watchdog.observers import Observer
 
 import yapconf
 from yapconf.exceptions import YapconfLoadError, YapconfSourceError
+from yapconf.handlers import FileHandler
 
 
 def get_source(label, source_type, **kwargs):
@@ -103,6 +109,7 @@ class ConfigSource(object):
     def __init__(self, label):
         self.label = label
         self.validate()
+        self._continue = True
 
     @abc.abstractmethod
     def validate(self):
@@ -112,7 +119,7 @@ class ConfigSource(object):
     def generate_override(self, separator='.'):
         """Generate an override.
 
-        Uses ``_get_data`` which is expected to be implemented by each child
+        Uses ``get_data`` which is expected to be implemented by each child
         class.
 
         Returns:
@@ -122,7 +129,7 @@ class ConfigSource(object):
             YapconfLoadError: If a known error occurs.
 
         """
-        data = self._get_data()
+        data = self.get_data()
         if not isinstance(data, dict):
             raise YapconfLoadError(
                 'Invalid source (%s). The data was loaded successfully, but '
@@ -131,8 +138,41 @@ class ConfigSource(object):
             )
         return self.label, yapconf.flatten(data, separator=separator)
 
+    def watch(self, handler):
+        """Watch a source for changes. When changes occur, call the handler.
+
+        By default, watches a dictionary that is in memory.
+
+        Args:
+            handler: Must respond to handle_config_change
+
+        Returns:
+            The daemon thread that was spawned.
+
+        """
+        thread = threading.Thread(
+            name=self.label + '-watcher',
+            target=self._watch,
+            args=(handler, self.get_data()),
+            daemon=True,
+        )
+        thread.start()
+        return thread
+
+    def _hash_data(self, data):
+        return hashlib.md5(repr(data).encode('utf-8')).hexdigest()
+
+    def _watch(self, handler, data):
+        current_hash = self._hash_data(data)
+        while self._continue:
+            new_hash = self._hash_data(self.get_data())
+            if current_hash != new_hash:
+                handler.handle_config_change(self.data)
+                current_hash = new_hash
+            time.sleep(1)
+
     @abc.abstractmethod
-    def _get_data(self):
+    def get_data(self):
         pass
 
 
@@ -155,7 +195,7 @@ class DictConfigSource(ConfigSource):
                 'dictionary. Got: %s' % (self.label, self.data)
             )
 
-    def _get_data(self):
+    def get_data(self):
         return self.data
 
 
@@ -187,7 +227,24 @@ class JsonConfigSource(ConfigSource):
                 'JSON config source.' % self.label
             )
 
-    def _get_data(self):
+    def _watch(self, handler, data):
+        if self.filename:
+            file_handler = FileHandler(
+                filename=self.filename,
+                handler=handler,
+                file_type='json'
+            )
+            observer = Observer()
+            directory = os.path.dirname(self.filename)
+            observer.schedule(file_handler, directory, recursive=False)
+            observer.start()
+            observer.join()
+        else:
+            raise YapconfSourceError(
+                'Cannot watch a string json source. Strings are immutable.'
+            )
+
+    def get_data(self):
         if self.data is not None:
             return json.loads(self.data, **self._load_kwargs)
 
@@ -222,7 +279,19 @@ class YamlConfigSource(ConfigSource):
                 'config source.' % self.label
             )
 
-    def _get_data(self):
+    def _watch(self, handler, data):
+        file_handler = FileHandler(
+            filename=self.filename,
+            handler=handler,
+            file_type='yaml'
+        )
+        observer = Observer()
+        directory = os.path.dirname(self.filename)
+        observer.schedule(file_handler, directory, recursive=False)
+        observer.start()
+        observer.join()
+
+    def get_data(self):
         return yapconf.load_file(
             self.filename,
             file_type='yaml',
@@ -237,6 +306,9 @@ class EnvironmentConfigSource(DictConfigSource):
     def __init__(self, label):
         super(EnvironmentConfigSource, self).__init__(label, os.environ.copy())
         self.type = 'environment'
+
+    def get_data(self):
+        return copy.deepcopy(os.environ)
 
 
 class EtcdConfigSource(ConfigSource):
@@ -265,7 +337,7 @@ class EtcdConfigSource(ConfigSource):
                  type(self.client))
             )
 
-    def _get_data(self):
+    def get_data(self):
         result = self.client.read(key=self.key, recursive=True)
         if not result.dir:
             raise YapconfLoadError(
@@ -342,7 +414,7 @@ class KubernetesConfigSource(ConfigSource):
                 (self.name, yapconf.FILE_TYPES)
             )
 
-    def _get_data(self):
+    def get_data(self):
         result = self.client.read_namespaced_config_map(self.name,
                                                         self.namespace)
         if self.key is None:

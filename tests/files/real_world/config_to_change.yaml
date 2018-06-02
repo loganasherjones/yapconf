@@ -1,0 +1,11 @@
+database:
+  host: 1.2.3.4
+  name: myapp_prod
+  port: 3306
+  verbose: false
+emoji: "\U0001F4A9"
+file: /path/to/file.yaml
+ssl:
+  private_key: blah
+  public_key: blah
+web_port: 443

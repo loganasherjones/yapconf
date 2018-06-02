@@ -10,6 +10,7 @@ from box import Box
 from yapconf.docs import generate_markdown_doc
 from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
                                 YapconfSourceError, YapconfSpecError)
+from yapconf.handlers import ConfigChangeHandler
 from yapconf.items import YapconfDictItem, YapconfListItem, from_specification
 from yapconf.sources import get_source
 
@@ -324,6 +325,34 @@ class YapconfSpec(object):
         overrides = self._generate_overrides(*args)
         config = self._generate_config_from_overrides(overrides, bootstrap)
         return Box(config)
+
+    def spawn_watcher(self, label, target=None):
+        """Spawns a config watcher in a separate daemon thread.
+
+        If a particular config value changes, and the item has a
+        ``watch_target`` defined, then that method will be called.
+
+        If a ``target`` is passed in, then it will call the ``target``
+        anytime the config changes.
+
+        Args:
+            label (str): Should match a label added through ``add_source``
+            target (func): Should be a function that takes two arguments,
+            the old configuration and the new configuration.
+
+        Returns:
+            The thread that was spawned.
+
+        """
+
+        if label not in self._sources:
+            raise YapconfSourceError(
+                'Cannot watch %s no source named %s' % (label, label)
+            )
+
+        current_config = self._sources[label].get_data()
+        handler = ConfigChangeHandler(current_config, self, target)
+        return self._sources[label].watch(handler)
 
     def migrate_config_file(
         self,

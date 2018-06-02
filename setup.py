@@ -14,6 +14,7 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'six<2',
     'python-box<4',
+    'watchdog',
 ]
 
 extras = {

@@ -750,3 +750,14 @@ def test_generate_documentation_file(real_world_spec, tmpdir):
         expected = fp.read()
 
     assert generated_docs == expected
+
+
+@pytest.mark.parametrize('spec,fq_name', [
+    (pytest.lazy_fixture('real_world_spec'), 'file'),
+    (pytest.lazy_fixture('real_world_spec'), 'emoji'),
+    (pytest.lazy_fixture('real_world_spec'), 'ssl.private_key'),
+    (pytest.lazy_fixture('spec_with_lists'), 'simple_list'),
+])
+def test_find_item(spec, fq_name):
+    item = spec.find_item(fq_name)
+    assert item.fq_name == fq_name

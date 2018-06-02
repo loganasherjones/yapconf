@@ -9,8 +9,8 @@ import yapconf
 from box import Box
 from yapconf.docs import generate_markdown_doc
 from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
-                                YapconfSpecError)
-from yapconf.items import YapconfDictItem, from_specification
+                                YapconfSourceError, YapconfSpecError)
+from yapconf.items import YapconfDictItem, YapconfListItem, from_specification
 from yapconf.sources import get_source
 
 if sys.version_info.major < 3:
@@ -185,6 +185,27 @@ class YapconfSpec(object):
 
         """
         self._sources[label] = get_source(label, source_type, **kwargs)
+
+    def find_item(self, fq_name):
+        """Find an item in the specification by fully qualified name.
+
+        Args:
+            fq_name (str): Fully-qualified name of the item.
+
+        Returns:
+            The item if it is in the specification. None otherwise
+
+        """
+        names = fq_name.split(self._separator)
+        current = self._yapconf_items
+        for name in names:
+            if isinstance(current, (YapconfDictItem, YapconfListItem)):
+                current = current.children
+
+            if name not in current:
+                return None
+            current = current[name]
+        return current
 
     def get_item(self, name, bootstrap=False):
         """Get a particular item in the specification.

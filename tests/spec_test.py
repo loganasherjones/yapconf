@@ -507,7 +507,7 @@ def test_load_etcd(simple_spec, key):
     ]
 
     etcd_result = Mock(dir=True)
-    etcd_result.__iter__ = Mock(return_value=iter(children))
+    etcd_result.children = children
     client = Mock(spec=yapconf.etcd_client.Client)
     client.read = Mock(return_value=etcd_result)
     simple_spec.add_source('etcd', 'etcd', client=client)

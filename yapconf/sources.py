@@ -346,7 +346,7 @@ class EtcdConfigSource(ConfigSource):
             )
 
         data = {}
-        for child in result:
+        for child in result.children:
             keys = self._extract_keys(child.key)
             self._add_value(data, keys, child.value)
 

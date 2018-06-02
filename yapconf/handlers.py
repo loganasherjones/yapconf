@@ -35,9 +35,9 @@ class ConfigChangeHandler(object):
         )
 
         for key, value in flattened_config.items():
-            if value != flattened_current[key]:
+            if value != flattened_current.get(key):
                 item = self.spec.find_item(key)
-                if item.watch_target:
+                if item and item.watch_target:
                     item.watch_target(flattened_current[key], value)
 
 

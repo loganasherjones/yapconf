@@ -56,7 +56,7 @@ setup(
     zip_safe=False,
     keywords='yapconf',
     classifiers=[
-        'Development Status :: 3 - Beta',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',

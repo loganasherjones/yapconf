@@ -144,24 +144,45 @@ class ConfigSource(object):
             )
         return self.label, yapconf.flatten(data, separator=separator)
 
-    def watch(self, handler):
-        """Watch a source for changes. When changes occur, call the handler.
+    def _spawn_and_watch(self, handler):
+        thread = self._spawn_watcher(handler)
+        while self._continue:
+            if thread.isAlive():
+                time.sleep(5)
+            else:
+                thread = self._spawn_watcher(handler)
 
-        By default, watches a dictionary that is in memory.
-
-        Args:
-            handler: Must respond to handle_config_change
-
-        Returns:
-            The daemon thread that was spawned.
-
-        """
+    def _spawn_watcher(self, handler):
         thread = threading.Thread(
             name=self.label + '-watcher',
             target=self._watch,
             args=(handler, self.get_data()),
         )
         thread.setDaemon(True)
+        return thread
+
+    def watch(self, handler, eternal=False):
+        """Watch a source for changes. When changes occur, call the handler.
+
+        By default, watches a dictionary that is in memory.
+
+        Args:
+            handler: Must respond to handle_config_change
+            eternal: Spawn eternal watch, or just a single watch.
+
+        Returns:
+            The daemon thread that was spawned.
+
+        """
+        if eternal:
+            thread = threading.Thread(
+                name=self.label + '-watcher-eternal',
+                target=self._spawn_and_watch,
+                args=(handler,)
+            )
+            thread.setDaemon(True)
+        else:
+            thread = self._spawn_watcher(handler)
         thread.start()
         return thread
 

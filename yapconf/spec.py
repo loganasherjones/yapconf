@@ -326,7 +326,7 @@ class YapconfSpec(object):
         config = self._generate_config_from_overrides(overrides, bootstrap)
         return Box(config)
 
-    def spawn_watcher(self, label, target=None):
+    def spawn_watcher(self, label, target=None, eternal=False):
         """Spawns a config watcher in a separate daemon thread.
 
         If a particular config value changes, and the item has a
@@ -339,6 +339,8 @@ class YapconfSpec(object):
             label (str): Should match a label added through ``add_source``
             target (func): Should be a function that takes two arguments,
             the old configuration and the new configuration.
+            eternal (bool): Determines if watcher threads should be restarted
+            if they die.
 
         Returns:
             The thread that was spawned.
@@ -352,7 +354,7 @@ class YapconfSpec(object):
 
         current_config = self._sources[label].get_data()
         handler = ConfigChangeHandler(current_config, self, target)
-        return self._sources[label].watch(handler)
+        return self._sources[label].watch(handler, eternal)
 
     def migrate_config_file(
         self,

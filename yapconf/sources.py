@@ -161,8 +161,8 @@ class ConfigSource(object):
             name=self.label + '-watcher',
             target=self._watch,
             args=(handler, self.get_data()),
-            daemon=True,
         )
+        thread.setDaemon(True)
         thread.start()
         return thread
 
@@ -362,7 +362,7 @@ class EtcdConfigSource(ConfigSource):
     def _watch(self, handler, data):
         while self._continue:
             try:
-                self.client.read(key=self.key, wait=True, recursive=True, timeout=1)
+                self.client.read(key=self.key, wait=True, recursive=True)
                 handler.handle_config_change(self.get_data())
             except EtcdWatchTimedOut:
                 pass

@@ -43,7 +43,7 @@ def teardown_function(function):
             'port': 3306,
             'verbose': False,
         },
-        'emoji': '💩',
+        'emoji': u'💩',
         'file': '/path/to/file.yaml',
         'ssl': {
             'private_key': 'blah',
@@ -813,7 +813,7 @@ def test_watchers(real_world_spec, label):
             'port': 3307,
             'verbose': False,
         },
-        'emoji': '💩',
+        'emoji': u'💩',
         'file': '/path/to/file.yaml',
         'ssl': {
             'private_key': 'blah',

@@ -9,12 +9,17 @@ import threading
 import six
 import time
 
-from kubernetes import watch
 from watchdog.observers import Observer
 
 import yapconf
 from yapconf.exceptions import YapconfLoadError, YapconfSourceError
 from yapconf.handlers import FileHandler
+
+if yapconf.kubernetes_support:
+    from kubernetes.watch import watch
+
+if yapconf.etcd_support:
+    from etcd import EtcdWatchTimedOut
 
 
 def get_source(label, source_type, **kwargs):
@@ -356,8 +361,11 @@ class EtcdConfigSource(ConfigSource):
 
     def _watch(self, handler, data):
         while self._continue:
-            self.client.read(key=self.key, wait=True, recursive=True)
-            handler.handle_config_change(self.get_data())
+            try:
+                self.client.read(key=self.key, wait=True, recursive=True, timeout=1)
+                handler.handle_config_change(self.get_data())
+            except EtcdWatchTimedOut:
+                pass
 
     def _add_value(self, data, keys, value):
         for i, key in enumerate(keys):

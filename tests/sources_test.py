@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
+from etcd import EtcdWatchTimedOut
 from mock import Mock, patch, PropertyMock
 
 import yapconf
@@ -119,3 +120,17 @@ def test_k8s_watch_bomb_on_deletion():
         with pytest.raises(YapconfSourceError):
             source._watch(handler, {})
 
+
+def test_etcd_watch():
+
+    mock_client = Mock(
+        spec=yapconf.etcd_client.Client,
+        read=Mock(side_effect=[EtcdWatchTimedOut, "result", ValueError])
+    )
+    handler = Mock()
+    source = get_source('label', 'etcd', client=mock_client)
+    source.get_data = Mock(return_value='NEW_DATA')
+    with pytest.raises(ValueError):
+        source._watch(handler, {})
+
+    handler.handle_config_change('NEW_DATA')

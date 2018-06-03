@@ -278,6 +278,55 @@ become ``--foo-bar``
 If you do not like this formatting, then you can turn it off by setting the ``format_env`` and
 ``format_cli`` flags.
 
+Watching
+--------
+Yapconf supports watching your configuration. There are two main ways that yapconf can help you
+with configuration changes. You can receive them at the global level (i.e. anytime the config
+appears to change in the environment), or on an item-by-item basis.
+
+.. note:: You can only watch sources. So if you want to use the watching functionality, you _must_
+    use ``add_source`` before these calls.
+
+The simplest way to know your configuration changed is to just use the global level:
+
+.. code-block:: python
+
+    def my_handler(old_config, new_config):
+        print("TODO: Something with the new/old config")
+        print(old_config)
+        print(new_config)
+
+    my_spec.add_source('label', 'json', '/path/to/file.json')
+    thread = my_spec.spawn_watcher('label', target=my_handler)
+    print(thread.isAlive())
+
+The ``spawn_watcher`` command returns a thread. Now, any time ``/path/to/file.json`` changes the
+``my_handler`` event will get called. One thing of note is that if ``/path/to/file.json`` is
+deleted, then the thread will die with an exception.
+
+If you want, you can also specify an ``eternal`` flag to the ``spawn_watcher`` call:
+
+.. code-block:: python
+
+    thread = my_spec.spawn_watcher('label', eternal=True)
+
+With this flag, if the watcher dies (for example, the ``/path/to/file.json`` is deleted) then a
+new watcher will be spawned in its place.
+
+Often times, there are only certain items in a specification that you would like to watch. Parsing
+the configuration can be a pain just to figure out what changed. To solve this problem, yapconf
+allows you to specify a ``watch_target`` on individual items.
+
+.. code-block:: python
+
+    def my_handler(old_foo, new_foo):
+        print("Foo value changed")
+        print(old_foo)
+        print(new_foo)
+
+    spec = YapconfSpec({'foo': {'watch_target': my_handler}})
+
+
 Config Documentation
 --------------------
 So you have this great app that can be configured easily. Now you need to pass it off to your
@@ -408,6 +457,8 @@ For each item in a specification, you can set any of these keys:
 | validator         | ``None``         | A custom validator function. Must take exactly one value and return True/False.                                |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 | fallback          | ``None``         | A fully qualified backup name to fallback to if no value could be found                                        |
++-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
+| watch_target      | ``None``         | A function to call if the config item changes (you must call ``spawn_watch`` for this to take effect.          |
 +-------------------+------------------+----------------------------------------------------------------------------------------------------------------+
 
 

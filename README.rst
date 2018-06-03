@@ -39,8 +39,9 @@ Yapconf helps manage your python application's configuration
 * Kubernetes ConfigMap support
 * Argparse integration
 * Environment Loading
-* Bootstrapping
+* Configuration watching
 * Migrate old configurations to new configurations
+* Generate documentation for your configuration
 
 
 Quick Start
@@ -53,6 +54,8 @@ To install Yapconf, run this command in your terminal:
     $ pip install yapconf
 
 Then you can use Yapconf yourself!
+
+**Load your first Config**
 
 .. code-block:: python
 
@@ -74,7 +77,8 @@ Then you can use Yapconf yourself!
     print(config.foo)
     print(config['foo'])
 
-You can also add these arguments to the command line very easily
+
+**Add CLI arguments based on your configuration**
 
 .. code-block:: python
 
@@ -90,7 +94,19 @@ You can also add these arguments to the command line very easily
     # Now you can load these via load_config:
     config = my_spec.load_config(cli_args, 'config.yaml', 'environment')
 
-Want to generate documentation for your configuration? We've got you covered!
+
+
+**Watch your config for changes**
+
+.. code-block:: python
+
+    def my_handler(old_config, new_config):
+        print("TODO: Something interesting goes here.")
+
+    my_spec.spawn_watcher('config.yaml', target=my_handler)
+
+
+**Generate documentation for your config**
 
 .. code-block:: python
 

@@ -3,10 +3,10 @@ import copy
 import json
 import os
 import sys
+import time
 from argparse import ArgumentParser
 
 import pytest
-import time
 from mock import Mock, mock_open, patch
 from ruamel import yaml
 

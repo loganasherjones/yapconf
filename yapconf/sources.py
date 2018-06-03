@@ -5,10 +5,9 @@ import hashlib
 import json
 import os
 import threading
-
-import six
 import time
 
+import six
 from watchdog.observers import Observer
 
 import yapconf

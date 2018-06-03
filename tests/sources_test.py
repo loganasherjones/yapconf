@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 from etcd import EtcdWatchTimedOut
-from mock import Mock, patch, PropertyMock
+from mock import Mock, PropertyMock, patch
 
 import yapconf
 from yapconf.exceptions import YapconfSourceError

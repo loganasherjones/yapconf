@@ -2,7 +2,7 @@
 from watchdog.events import RegexMatchingEventHandler
 
 import yapconf
-from yapconf.exceptions import YapconfSourceError, YapconfLoadError
+from yapconf.exceptions import YapconfLoadError, YapconfSourceError
 
 
 class ConfigChangeHandler(object):

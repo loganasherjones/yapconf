@@ -28,6 +28,14 @@ yapconf.exceptions module
     :undoc-members:
     :show-inheritance:
 
+yapconf.handlers module
+-----------------------
+
+.. automodule:: yapconf.handlers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 yapconf.items module
 --------------------
 

@@ -9,6 +9,7 @@ History
 * Added support for kubernetes (#47)
 * Added support for fallbacks for config values (#45)
 * Added the ability to generate documentation for your configuration (#63)
+* Added config watching capabilities (#36)
 
 0.2.4 (2018-05-21)
 ------------------

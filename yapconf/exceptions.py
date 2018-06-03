@@ -19,7 +19,7 @@ class YapconfSpecError(YapconfError):
 
 
 class YapconfSourceError(YapconfError):
-    """Error occured attempting to validate or load a config source."""
+    """Error occurred attempting to validate or load a config source."""
     pass
 
 

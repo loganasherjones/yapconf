@@ -98,6 +98,7 @@ def _generate_item(name, item_dict, env_prefix,
     init_args['alt_env_names'] = item_dict.get('alt_env_names', [])
     init_args['validator'] = item_dict.get('validator')
     init_args['fallback'] = item_dict.get('fallback')
+    init_args['watch_target'] = item_dict.get('watch_target')
 
     if parent_names:
         init_args['prefix'] = separator.join(parent_names)
@@ -167,6 +168,9 @@ class YapconfItem(object):
             behavior.
          choices: A list of valid choices for the item.
          alt_env_names: A list of alternate environment names.
+         validator: A custom validation method, should take 1 argument.
+         fallback: The fully-qualified name from which to pull a value.
+         watch_target: The method to call when this config value changes.
 
     Raises:
         YapconfItemError: If any of the information given during
@@ -197,6 +201,7 @@ class YapconfItem(object):
         self.cli_choices = kwargs.get('cli_choices') or []
         self.cli_name = kwargs.get('cli_name')
         self.cli_expose = kwargs.get('cli_expose', True)
+        self.watch_target = kwargs.get('watch_target')
 
         if self.prefix:
             self.fq_name = self.separator.join([self.prefix, self.name])

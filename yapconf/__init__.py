@@ -7,9 +7,6 @@ import sys
 
 import six
 
-from yapconf.exceptions import YapconfError
-from yapconf.spec import YapconfSpec
-
 if sys.version_info.major < 3:
     from io import open
 elif sys.version_info.major == 3:
@@ -48,6 +45,8 @@ except ImportError as ex:
     kubernetes_client = None
     kubernetes_support = False
 
+from yapconf.exceptions import YapconfError  # noqa: E402
+from yapconf.spec import YapconfSpec  # noqa: E402
 
 __author__ = """Logan Asher Jones"""
 __email__ = 'loganasherjones@gmail.com'

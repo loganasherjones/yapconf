@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import copy
 import json
 import os
 import sys
+import time
 from argparse import ArgumentParser
 
 import pytest
@@ -29,7 +31,29 @@ def setup_function(function):
 def teardown_function(function):
     os.environ = original_env
     yapconf.yaml = original_yaml
-    tmp_path = os.path.join(current_dir, 'files', 'real_world', 'tmp')
+    real_world_path = os.path.join(current_dir, 'files', 'real_world')
+    tmp_path = os.path.join(real_world_path, 'tmp')
+
+    json_file = os.path.join(real_world_path, 'config_to_change.json')
+    yaml_file = os.path.join(real_world_path, 'config_to_change.yaml')
+    original_data = {
+        'database': {
+            'host': '1.2.3.4',
+            'name': 'myapp_prod',
+            'port': 3306,
+            'verbose': False,
+        },
+        'emoji': u'💩',
+        'file': '/path/to/file.yaml',
+        'ssl': {
+            'private_key': 'blah',
+            'public_key': 'blah',
+        },
+        'web_port': 443,
+    }
+
+    yapconf.dump_data(original_data, json_file, file_type='json')
+    yapconf.dump_data(original_data, yaml_file, file_type='yaml')
     if os.path.exists(tmp_path):
         os.remove(tmp_path)
 
@@ -483,7 +507,7 @@ def test_load_etcd(simple_spec, key):
     ]
 
     etcd_result = Mock(dir=True)
-    etcd_result.__iter__ = Mock(return_value=iter(children))
+    etcd_result.children = children
     client = Mock(spec=yapconf.etcd_client.Client)
     client.read = Mock(return_value=etcd_result)
     simple_spec.add_source('etcd', 'etcd', client=client)
@@ -750,3 +774,103 @@ def test_generate_documentation_file(real_world_spec, tmpdir):
         expected = fp.read()
 
     assert generated_docs == expected
+
+
+@pytest.mark.parametrize('spec,fq_name', [
+    (pytest.lazy_fixture('real_world_spec'), 'file'),
+    (pytest.lazy_fixture('real_world_spec'), 'emoji'),
+    (pytest.lazy_fixture('real_world_spec'), 'ssl.private_key'),
+    (pytest.lazy_fixture('spec_with_lists'), 'simple_list'),
+])
+def test_find_item(spec, fq_name):
+    item = spec.find_item(fq_name)
+    assert item.fq_name == fq_name
+
+
+def test_spawn_watcher(simple_spec):
+    simple_spec.add_source('label', 'dict', data={})
+    mock_watch = Mock()
+    simple_spec._sources['label'].watch = mock_watch
+    simple_spec.spawn_watcher('label')
+    assert mock_watch.call_count == 1
+
+
+def test_spawn_watcher_error(simple_spec):
+    with pytest.raises(YapconfSourceError):
+        simple_spec.spawn_watcher('LABEL_NOT_DEFINED')
+
+
+@pytest.mark.parametrize('label', [
+    'label1',
+    'label2',
+    'label3',
+])
+def test_watchers(real_world_spec, label):
+    original_data = {
+        'database': {
+            'host': '1.2.3.4',
+            'name': 'myapp_prod',
+            'port': 3307,
+            'verbose': False,
+        },
+        'emoji': u'💩',
+        'file': '/path/to/file.yaml',
+        'ssl': {
+            'private_key': 'blah',
+            'public_key': 'blah',
+        },
+        'web_port': 443,
+    }
+    safe_data = copy.deepcopy(original_data)
+    flags = {'overall': True, 'individual': True}
+    real_world_path = os.path.join(current_dir, 'files', 'real_world')
+
+    def overall_handler(old_config, new_config):
+        flags['overall'] = False
+
+    def indivual_handler(old_value, new_value):
+        flags['individual'] = False
+
+    def change_config(label):
+        if label == 'label1':
+            config = real_world_spec.load_config('label1')
+            config.database.port += 1
+            yapconf.dump_data(
+                config.to_dict(),
+                filename=yaml_filename,
+                file_type='yaml'
+            )
+
+        elif label == 'label2':
+            config = real_world_spec.load_config('label2')
+            config.database.port += 1
+            yapconf.dump_data(
+                config.to_dict(),
+                filename=json_filename,
+                file_type='json'
+            )
+
+        elif label == 'label3':
+            safe_data['database']['port'] += 1
+
+    item = real_world_spec.find_item('database.port')
+    item.watch_target = indivual_handler
+
+    yaml_filename = os.path.join(real_world_path, 'config_to_change.yaml')
+    json_filename = os.path.join(real_world_path, 'config_to_change.json')
+
+    real_world_spec.add_source('label1', 'yaml', filename=yaml_filename)
+    real_world_spec.add_source('label2', 'json', filename=json_filename)
+    real_world_spec.add_source('label3', 'dict', data=safe_data)
+
+    real_world_spec.spawn_watcher(label, target=overall_handler)
+
+    change_config(label)
+
+    wait_time = 0.0
+
+    while any(flags.values()) and wait_time <= 15:
+        time.sleep(0.25)
+        wait_time += 0.25
+
+    assert not all(flags.values())

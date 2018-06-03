@@ -1,0 +1,15 @@
+{
+    "database": {
+        "host": "1.2.3.4",
+        "name": "myapp_prod",
+        "port": 3306,
+        "verbose": false
+    },
+    "emoji": "💩",
+    "file": "/path/to/file.yaml",
+    "ssl": {
+        "private_key": "blah",
+        "public_key": "blah"
+    },
+    "web_port": 443
+}

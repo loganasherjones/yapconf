@@ -869,7 +869,7 @@ def test_watchers(real_world_spec, label):
 
     wait_time = 0.0
 
-    while any(flags.values()) and wait_time <= 30:
+    while any(flags.values()) and wait_time <= 90:
         time.sleep(0.25)
         wait_time += 0.25
 

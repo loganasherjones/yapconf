@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 """The setup script."""
 
 from setuptools import find_packages, setup
@@ -43,7 +43,7 @@ extras = {
 
 setup(
     name='yapconf',
-    version='0.3.0',
+    version='0.3.1',
     description="Yet Another Python Configuration",
     long_description=readme + '\n\n' + history,
     author="Logan Asher Jones",

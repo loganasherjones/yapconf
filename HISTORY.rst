@@ -2,7 +2,11 @@
 History
 =======
 
-0.3.0 TBD
+0.3.1 (2018-06-07)
+---------
+* Fixed an issue with environment loading (#74)
+
+0.3.0 (2018-06-02)
 ---------
 * Fixed an issue where utf-8 migrations would break (#46)
 * Added support for etcd (#47)

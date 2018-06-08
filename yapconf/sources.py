@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import abc
-import copy
 import hashlib
 import json
 import os
@@ -335,7 +334,7 @@ class EnvironmentConfigSource(DictConfigSource):
         self.type = 'environment'
 
     def get_data(self):
-        return copy.deepcopy(os.environ)
+        return os.environ.copy()
 
 
 class EtcdConfigSource(ConfigSource):

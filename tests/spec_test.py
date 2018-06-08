@@ -555,6 +555,12 @@ def test_load_from_source(
     assert config == example_data
 
 
+def test_load_environment(basic_spec):
+    os.environ['FOO'] = 'foo_value'
+    config = basic_spec.load_config('ENVIRONMENT')
+    assert config.foo == 'foo_value'
+
+
 @pytest.mark.usefixtures('simple_spec')
 @pytest.mark.parametrize('key,config_type,formatter', [
     (None, None, None),

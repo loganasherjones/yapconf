@@ -134,3 +134,8 @@ def test_etcd_watch():
         source._watch(handler, {})
 
     handler.handle_config_change('NEW_DATA')
+
+
+def test_environment():
+    source = get_source('label', 'environment')
+    assert isinstance(source.get_data(), dict)

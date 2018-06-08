@@ -870,13 +870,15 @@ def test_watchers(real_world_spec, label):
     real_world_spec.add_source('label3', 'dict', data=safe_data)
 
     real_world_spec.spawn_watcher(label, target=overall_handler)
+    time.sleep(0.1)
 
     change_config(label)
 
     wait_time = 0.0
 
-    while any(flags.values()) and wait_time <= 90:
+    while any(flags.values()) and wait_time <= 3:
         time.sleep(0.25)
         wait_time += 0.25
 
-    assert not all(flags.values())
+    for flag in flags.values():
+        assert not flag

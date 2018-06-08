@@ -5,6 +5,7 @@ History
 0.3.1 (2018-06-07)
 ---------
 * Fixed an issue with environment loading (#74)
+* Fixed an issue with watching in-memory dictionaries (#75)
 
 0.3.0 (2018-06-02)
 ---------

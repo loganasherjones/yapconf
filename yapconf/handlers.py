@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import copy
+
 from watchdog.events import RegexMatchingEventHandler
 
 import yapconf
@@ -12,7 +14,9 @@ class ConfigChangeHandler(object):
     """
 
     def __init__(self, current_config, spec, user_handler=None):
-        self.current_config = current_config
+        # We perform a deep copy so that we can accurately assess whether
+        # or not the value has changed for in-memory dictionaries.
+        self.current_config = copy.deepcopy(current_config)
         self.spec = spec
         self.user_handler = user_handler
 
@@ -26,7 +30,7 @@ class ConfigChangeHandler(object):
         if self.user_handler:
             self.user_handler(self.current_config, new_config)
         self._call_spec_handlers(new_config)
-        self.current_config = new_config
+        self.current_config = copy.deepcopy(new_config)
 
     def _call_spec_handlers(self, new_config):
         flattened_config = yapconf.flatten(new_config, self.spec._separator)

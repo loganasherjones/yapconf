@@ -6,6 +6,7 @@ import re
 import sys
 
 import six
+from box import Box
 
 if sys.version_info.major < 3:
     from io import open
@@ -151,6 +152,9 @@ def _dump(data, stream, file_type, **kwargs):
             'default_flow_style': False,
             'encoding': 'utf-8'
         }
+
+    if isinstance(data, Box):
+        data = data.to_dict()
 
     if str(file_type).lower() == 'json':
         dumped = json.dumps(data, **kwargs)

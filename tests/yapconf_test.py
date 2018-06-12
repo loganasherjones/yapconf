@@ -119,23 +119,22 @@ def test_dump_box(ascii_data):
     def mock_write(x):
         data['writes'] += x
 
-    writes = [
-        'db:\n',
-        '  name: db_name\n',
-        '  port: 123\n',
-        'foo: bar\n',
-        'items:\n',
-        '- 1\n',
-        '- 2\n',
-        '- 3\n',
-    ]
+    expected = (
+        'db:{n}'
+        '  name: db_name{n}'
+        '  port: 123{n}'
+        'foo: bar{n}'
+        'items:{n}'
+        '- 1{n}'
+        '- 2{n}'
+        '- 3{n}'
+    ).format(n=os.linesep)
 
     boxed_data = Box(ascii_data)
-    with patch('sys.stdout') as mock_stdout:
-        mock_stdout.write = mock_write
+    with patch('sys.stdout.write', mock_write):
         yapconf.dump_data(boxed_data, file_type='yaml')
 
-    assert data['writes'] == ''.join(writes)
+    assert data['writes'] == expected
 
 
 @pytest.mark.parametrize('original,expected', [

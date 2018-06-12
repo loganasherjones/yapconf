@@ -2,6 +2,8 @@
 import os
 
 import pytest
+from box import Box
+from mock import patch
 
 import yapconf
 
@@ -109,6 +111,31 @@ def test_dump_data(tmpdir, data, file_type):
     filename = os.path.join(path.dirname, path.basename)
     yapconf.dump_data(data, filename, file_type)
     assert data == yapconf.load_file(filename, file_type)
+
+
+def test_dump_box(ascii_data):
+    data = {'writes': ''}
+
+    def mock_write(x):
+        data['writes'] += x
+
+    writes = [
+        'db:\n',
+        '  name: db_name\n',
+        '  port: 123\n',
+        'foo: bar\n',
+        'items:\n',
+        '- 1\n',
+        '- 2\n',
+        '- 3\n',
+    ]
+
+    boxed_data = Box(ascii_data)
+    with patch('sys.stdout') as mock_stdout:
+        mock_stdout.write = mock_write
+        yapconf.dump_data(boxed_data, file_type='yaml')
+
+    assert data['writes'] == ''.join(writes)
 
 
 @pytest.mark.parametrize('original,expected', [

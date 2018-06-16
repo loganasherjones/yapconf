@@ -34,7 +34,6 @@ History
 ------------------
 * Fixed Python2 unicode error (#41)
 
-0.2.1 (2018-03-11)
 0.2.2 (2018-03-28)
 ------------------
 * Fixed Python2 compatibility error (#35)

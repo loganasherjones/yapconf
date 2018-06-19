@@ -7,12 +7,12 @@ History
 * Fixed an issue with dumping box data to YAML (#78)
 
 0.3.1 (2018-06-07)
----------
+------------------
 * Fixed an issue with environment loading (#74)
 * Fixed an issue with watching in-memory dictionaries (#75)
 
 0.3.0 (2018-06-02)
----------
+------------------
 * Fixed an issue where utf-8 migrations would break (#46)
 * Added support for etcd (#47)
 * Added support for kubernetes (#47)

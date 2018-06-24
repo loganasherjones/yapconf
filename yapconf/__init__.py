@@ -51,7 +51,7 @@ from yapconf.spec import YapconfSpec  # noqa: E402
 
 __author__ = """Logan Asher Jones"""
 __email__ = 'loganasherjones@gmail.com'
-__version__ = '0.3.2'
+__version__ = '0.3.2.post1'
 
 
 FILE_TYPES = {'json', }

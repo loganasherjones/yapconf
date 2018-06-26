@@ -20,7 +20,7 @@ def ascii_data():
 @pytest.fixture
 def unicode_data():
     return {
-        'foo': 'bar',
+        u'foo': u'bar',
         'db': {'name': 'db_name', 'port': 123},
         'items': [1, 2, 3],
         u'💩': u'🐍',

@@ -163,7 +163,7 @@ def _dump(data, stream, file_type, **kwargs):
         else:
             stream.write(six.u(dumped))
     elif str(file_type).lower() == 'yaml':
-        yaml.dump(data, stream, **kwargs)
+        yaml.safe_dump(data, stream, **kwargs)
     else:
         raise NotImplementedError('Someone forgot to implement dump for file '
                                   'type: %s' % file_type)

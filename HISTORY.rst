@@ -2,6 +2,10 @@
 History
 =======
 
+0.3.3 (2018-06-25)
+------------------
+* Fixed an issue with dumping unicode in python 2 (#82)
+
 0.3.2 (2018-06-11)
 ------------------
 * Fixed an issue with dumping box data to YAML (#78)

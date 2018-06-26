@@ -268,7 +268,7 @@ def test_migrate_config_file_does_not_exist_create(basic_spec):
 @patch('os.path.isfile', Mock(return_value=False))
 def test_migrate_config_file_create_yaml(basic_spec):
     open_path = 'yapconf.open'
-    with patch('yapconf.yaml.dump') as dump_mock:
+    with patch('yapconf.yaml.safe_dump') as dump_mock:
         with patch(open_path, mock_open()) as mock_file:
             new_config = basic_spec.migrate_config_file(
                 '/path/to/file', create=True, output_file_type='yaml')

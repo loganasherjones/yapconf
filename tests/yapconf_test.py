@@ -29,6 +29,25 @@ def unicode_data():
 
 
 @pytest.mark.parametrize('orig,expected', [
+    ('CamelCase', 'camel_case'),
+    ('CamelCamelCase', 'camel_camel_case'),
+    ('Camel2Camel2Case', 'camel2_camel2_case'),
+    ('getHTTPResponseCode', 'get_http_response_code'),
+    ('get2HTTPResponseCode', 'get2_http_response_code'),
+    ('HTTPResponseCode', 'http_response_code'),
+    ('HTTPResponseCodeXYZ', 'http_response_code_xyz'),
+    ('snake-case', 'snake_case'),
+    ('snake-snake-case', 'snake_snake_case'),
+    ('snake2-snake2-case', 'snake2_snake2_case'),
+    ('snake3-snake3_case', 'snake3_snake3_case'),
+    (' CamelGetHTTPResponse_code_snake2_case is a pain',
+     'camel_get_http_response_code_snake2_case_is_a_pain')
+])
+def test_convert_to_snake(orig, expected):
+    assert expected == yapconf.change_case(orig, separator='_')
+
+
+@pytest.mark.parametrize('orig,expected', [
     ('CamelCase', 'camel-case'),
     ('CamelCamelCase', 'camel-camel-case'),
     ('Camel2Camel2Case', 'camel2-camel2-case'),
@@ -39,10 +58,11 @@ def unicode_data():
     ('snake_case', 'snake-case'),
     ('snake_snake_case', 'snake-snake-case'),
     ('snake2_snake2_case', 'snake2-snake2-case'),
+    ('snake3_snake3-case', 'snake3-snake3-case'),
     (' CamelGetHTTPResponse_code_snake2_case is a pain',
      'camel-get-http-response-code-snake2-case-is-a-pain')
 ])
-def test_convert_camel_to_kebab(orig, expected):
+def test_convert_to_kebab(orig, expected):
     assert expected == yapconf.change_case(orig)
 
 

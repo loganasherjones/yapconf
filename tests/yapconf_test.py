@@ -40,8 +40,10 @@ def unicode_data():
     ('snake-snake-case', 'snake_snake_case'),
     ('snake2-snake2-case', 'snake2_snake2_case'),
     ('snake3-snake3_case', 'snake3_snake3_case'),
-    (' CamelGetHTTPResponse_code_snake2_case is a pain',
-     'camel_get_http_response_code_snake2_case_is_a_pain')
+    (
+        ' CamelGetHTTPResponse_code_snake2_case is a pain',
+        'camel_get_http_response_code_snake2_case_is_a_pain'
+    ),
 ])
 def test_convert_to_snake(orig, expected):
     assert expected == yapconf.change_case(orig, separator='_')

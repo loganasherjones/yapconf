@@ -55,45 +55,126 @@ To install Yapconf, run this command in your terminal:
 
 Then you can use Yapconf yourself!
 
-**Load your first Config**
+
+**Load your first config**
 
 .. code-block:: python
 
     from yapconf import YapconfSpec
 
     # First define a specification
-    my_spec = YapconfSpec({"foo": {"type": "str", "default": "bar"}}, env_prefix='MY_APP_')
+    spec_def = {
+        "foo": {"type": "str", "default": "bar"},
+    }
+    my_spec = YapconfSpec(spec_def)
 
-    # Now add your sources (order does not matter)
-    my_spec.add_source('environment', 'environment')
-    my_spec.add_source('config.yaml', 'yaml', filename='/path/to/config.yaml')
+    # Now add your source
+    my_spec.add_source('my yaml config', 'yaml', filename='./config.yaml')
 
-    # Then load the configuration in whatever order you want!
-    # load_config will automatically look for the 'foo' value in
-    # '/path/to/config.yml', then the environment, finally
-    # falling back to the default if it was not found elsewhere
-    config = my_spec.load_config('config.yaml', 'environment')
+    # Then load the configuration!
+    config = my_spec.load_config('config.yaml')
+
+    print(config.foo)
+    print(config['foo'])
+
+In this example ``load_config`` will look for the 'foo' value in the file
+./config.yaml and will fall back to the default from the specification
+definition ("bar") if it's not found there.
+
+Try running with an empty file at ./config.yaml, and then try running with
+
+.. code-block:: yaml
+   :caption: config.yaml:
+
+   foo: baz
+
+
+**Load from Environment Variables**
+
+.. code-block:: python
+
+    from yapconf import YapconfSpec
+
+    # First define a specification
+    spec_def = {
+        "foo-dash": {"type": "str", "default": "bar"},
+    }
+    my_spec = YapconfSpec(spec_def, env_prefix='MY_APP_')
+
+    # Now add your source
+    my_spec.add_source('env', 'environment')
+
+    # Then load the configuration!
+    config = my_spec.load_config('env')
+
+    print(config.foo)
+    print(config['foo'])
+
+In this example ``load_config`` will look for the 'foo' value in the
+environment and will fall back to the default from the specification
+definition ("bar") if it's not found there.
+
+Try running once, and then run ``export MY_APP_FOO_DASH=BAZ`` in the shell
+and run again.
+
+Note that the name yapconf is searching the environment for has been modified.
+The env_prefix ``MY_APP_`` as been applied to the name, and the name itself has
+been capitalized and converted to snake-case.
+
+
+**Load from CLI arguments**
+
+.. code-block:: python
+
+    import argparse
+    from yapconf import YapconfSpec
+
+    # First define a specification
+    spec_def = {
+        "foo": {"type": "str", "default": "bar"},
+    }
+    my_spec = YapconfSpec(spec_def)
+
+    # This will add --foo as an argument to your python program
+    parser = argparse.ArgumentParser()
+    my_spec.add_arguments(parser)
+
+    # Now you can load these via load_config:
+    cli_args = vars(parser.parse_args(sys.argv[1:]))
+    config = my_spec.load_config(cli_args)
 
     print(config.foo)
     print(config['foo'])
 
 
-**Add CLI arguments based on your configuration**
+**Load from multiple sources**
 
 .. code-block:: python
 
-    import argparse
+    from yapconf import YapconfSpec
 
-    parser = argparse.ArgumentParser()
+    # First define a specification
+    spec_def = {
+        "foo": {"type": "str", "default": "bar"},
+    }
+    my_spec = YapconfSpec(spec_def, env_prefix='MY_APP_')
 
-    # This will add --foo as an argument to your python program
-    my_spec.add_arguments(parser)
+    # Now add your sources (order does not matter)
+    my_spec.add_source('env', 'environment')
+    my_spec.add_source('my yaml file', 'yaml', filename='./config.yaml')
 
-    cli_args = vars(parser.parse_args(sys.argv[1:]))
+    # Now load your configuration using the sources in the order you want!
+    config = my_spec.load_config('my yaml file', 'env')
 
-    # Now you can load these via load_config:
-    config = my_spec.load_config(cli_args, 'config.yaml', 'environment')
+    print(config.foo)
+    print(config['foo'])
 
+In this case ``load_config`` will look for 'foo' in ./config.yaml. If not
+found it will look for ``MY_APP_FOO`` in the environment, and if stil not
+found it will fall back to the default.
+Since the 'my yaml file' label comes first in the load_config arguments
+yapconf will look there for values first, even though add_source was
+called with 'env' first.
 
 
 **Watch your config for changes**

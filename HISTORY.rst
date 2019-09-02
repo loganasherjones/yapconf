@@ -2,6 +2,11 @@
 History
 =======
 
+0.4.0 (TBD)
+-----------
+* Fixed deprecation warning (#96)
+
+
 0.3.3 (2018-06-25)
 ------------------
 * Fixed an issue with dumping unicode in python 2 (#82)

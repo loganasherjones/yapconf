@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Top-level package for Yapconf."""
-import collections
 import json
 import re
 import sys
@@ -8,10 +7,12 @@ import sys
 import six
 from box import Box
 
-if sys.version_info.major < 3:
-    from io import open
-elif sys.version_info.major == 3:
+if six.PY3:
+    from collections.abc import MutableMapping
     unicode = str
+else:
+    from io import open
+    from collections import MutableMapping
 
 # Setup feature flags for use throughout the package.
 yaml_support = True
@@ -242,13 +243,13 @@ def flatten(dictionary, separator='.', prefix=''):
     new_dict = {}
     for key, value in dictionary.items():
         new_key = prefix + separator + key if prefix else key
-        if isinstance(value, collections.MutableMapping):
+        if isinstance(value, MutableMapping):
             new_dict.update(flatten(value, separator, new_key))
 
         elif isinstance(value, list):
             new_value = []
             for item in value:
-                if isinstance(item, collections.MutableMapping):
+                if isinstance(item, MutableMapping):
                     new_value.append(flatten(item, separator, new_key))
                 else:
                     new_value.append(item)

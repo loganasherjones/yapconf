@@ -84,7 +84,6 @@ definition ("bar") if it's not found there.
 Try running with an empty file at ./config.yaml, and then try running with
 
 .. code-block:: yaml
-   :caption: config.yaml:
 
    foo: baz
 

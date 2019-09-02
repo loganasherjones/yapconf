@@ -2,6 +2,11 @@
 History
 =======
 
+0.3.4 (2019-09-02)
+-----------
+* Fixed deprecation warning (#96)
+
+
 0.3.3 (2018-06-25)
 ------------------
 * Fixed an issue with dumping unicode in python 2 (#82)

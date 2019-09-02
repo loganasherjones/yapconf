@@ -275,7 +275,7 @@ class YapconfSpec(object):
     def load_config(self, *args, **kwargs):
         """Load a config based on the arguments passed in.
 
-        The order of arguments passed in as \*args is significant. It indicates
+        The order of arguments passed in as *args is significant. It indicates
         the order of precedence used to load configuration values. Each
         argument can be a string, dictionary or a tuple. There is a special
         case string called 'ENVIRONMENT', otherwise it will attempt to load the

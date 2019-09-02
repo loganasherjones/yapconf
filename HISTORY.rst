@@ -2,7 +2,7 @@
 History
 =======
 
-0.4.0 (TBD)
+0.3.4 (2019-09-02)
 -----------
 * Fixed deprecation warning (#96)
 

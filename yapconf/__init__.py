@@ -36,14 +36,14 @@ except ImportError:
 
 try:
     from etcd import client as etcd_client
-except ImportError as ex:
+except ImportError:
     etcd_client = None
     etcd_support = False
 
 
 try:
     from kubernetes import client as kubernetes_client
-except ImportError as ex:
+except ImportError:
     kubernetes_client = None
     kubernetes_support = False
 

@@ -122,6 +122,31 @@ def test_nested_load_config(spec_with_dicts):
     assert config['foo']['bat']
 
 
+@pytest.mark.parametrize('kwargs,expected', [
+    ({"bootstrap": True}, {"file": "/path/to/file.yaml"}),
+    (
+        {"exclude_bootstrap": True},
+        {
+            "web_port": 443,
+            "ssl": {
+                "private_key": "/path/to/private.key",
+                "public_key": "/path/to/public.crt",
+            },
+            "database": {
+                "name": "myapp_prod",
+                "host": "1.2.3.4",
+                "port": 3306,
+                "verbose": False,
+            },
+            "emoji": "💩",
+        }
+    ),
+])
+def test_load_with_kwargs(real_world_spec, current_config, kwargs, expected):
+    config = real_world_spec.load_filtered_config(current_config, **kwargs)
+    assert config == expected
+
+
 def test_spec_bad_file_type():
     with pytest.raises(YapconfSpecError):
         YapconfSpec({}, file_type='INVALID')

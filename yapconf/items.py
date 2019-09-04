@@ -291,6 +291,33 @@ class YapconfItem(object):
             kwargs = self._get_argparse_kwargs(bootstrap)
             parser.add_argument(*args, **kwargs)
 
+    def apply_filter(self, **kwargs):
+        if kwargs.get("include"):
+            if self.fq_name in kwargs["include"]:
+                return self
+            else:
+                return None
+
+        elif kwargs.get("exclude"):
+            if self.fq_name in kwargs["exclude"]:
+                return None
+            else:
+                return self
+
+        elif kwargs.get("bootstrap"):
+            if self.bootstrap:
+                return self
+            else:
+                return None
+
+        elif kwargs.get("exclude_bootstrap"):
+            if self.bootstrap:
+                return None
+            else:
+                return self
+
+        return self
+
     def get_config_value(self, overrides, skip_environment=False):
         """Get the configuration value from all overrides.
 
@@ -846,6 +873,32 @@ class YapconfDictItem(YapconfItem):
         }
         self._validate_value(converted_value)
         return converted_value
+
+    def apply_filter(self, **kwargs):
+        if kwargs.get("include") and self.fq_name in kwargs["include"]:
+            return self
+
+        elif kwargs.get("exclude") and self.fq_name in kwargs["exclude"]:
+            return None
+
+        elif kwargs.get("bootstrap") and self.bootstrap:
+            return self
+
+        elif kwargs.get("exclude_bootstrap") and self.bootstrap:
+            return None
+
+        filtered_items = {}
+        for child_name, child_item in six.iteritems(self.children):
+            result = child_item.apply_filter(**kwargs)
+            if result is not None:
+                filtered_items[child_name] = result
+
+        if not filtered_items:
+            return None
+        else:
+            kwargs = copy.deepcopy(self.__dict__)
+            kwargs["children"] = filtered_items
+            return YapconfDictItem(**kwargs)
 
     def migrate_config(self, current_config, config_to_migrate,
                        always_update, update_defaults):

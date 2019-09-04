@@ -2,6 +2,10 @@
 History
 =======
 
+0.3.5 (2019-09-03)
+------------------
+* Adding initial support for loading specific config items.
+
 0.3.4 (2019-09-02)
 ------------------
 * Fixed deprecation warning (#96)

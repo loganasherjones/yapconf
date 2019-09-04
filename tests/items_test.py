@@ -562,3 +562,57 @@ def test_invalid_value():
     item = from_specification({'foo': {'validator': always_invalid}})['foo']
     with pytest.raises(YapconfValueError):
         item.get_config_value([('label', {'foo': 'bar'})])
+
+
+def test_filter():
+    item = YapconfItem("name")
+    prefix_item = YapconfItem("name", prefix="prefix")
+
+    assert item.apply_filter(include=["name"]) is item
+    assert item.apply_filter(exclude=["name"]) is None
+    assert item.apply_filter(bootstrap=False) is item
+    assert item.apply_filter(bootstrap=True) is None
+    assert item.apply_filter(exclude_bootstrap=True) is item
+    assert item.apply_filter(exclude_bootstrap=False) is item
+    assert item.apply_filter() is item
+
+    assert prefix_item.apply_filter(include=["name"]) is None
+    assert prefix_item.apply_filter(include=["prefix.name"]) is prefix_item
+
+
+def test_dict_filter(db_item):
+    assert db_item.apply_filter(include=["db"]) is db_item
+
+    actual = db_item.apply_filter(include=["db.name"])
+    assert actual is not None
+    assert len(actual.children) == 1
+    assert actual.children["name"].fq_name == "db.name"
+
+    actual = db_item.apply_filter(include=["db.name", "db.log.level"])
+    assert len(actual.children) == 2
+    assert "name" in actual.children
+    assert "log" in actual.children
+    assert len(actual.children["log"].children) == 1
+    assert "level" in actual.children["log"].children
+
+    actual = db_item.apply_filter(
+        include=["db.name", "db.log.level"], exclude=["db.log.file"]
+    )
+    assert len(actual.children) == 2
+    assert "name" in actual.children
+    assert "log" in actual.children
+    assert len(actual.children["log"].children) == 1
+    assert "level" in actual.children["log"].children
+
+    actual = db_item.apply_filter(
+        exclude=["db.log"]
+    )
+    assert len(actual.children) == 4
+    assert "log" not in actual.children
+
+    actual = db_item.apply_filter(
+        exclude=["db.log.file"]
+    )
+    assert len(actual.children) == 5
+    assert "log" in actual.children
+    assert "file" not in actual.children["log"].children

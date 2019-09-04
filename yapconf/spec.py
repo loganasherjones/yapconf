@@ -272,6 +272,36 @@ class YapconfSpec(object):
 
         return doc_string
 
+    def load_filtered_config(self, *args, **kwargs):
+        """Loads a filtered version of the configuration.
+
+        The order of arguments is the same as `load_config`.
+
+        Keyword Args:
+            bootstrap: If set to true, indicates only bootstrap items should
+                be loaded.
+            exclude_bootstrap: If set to true, load all non-bootstrapped items.
+            include: A list of fully qualified key names that should be
+                included. Only these items will be included in the config that
+                is returned.
+            exclude: A list of fully qualified key names that should be
+                excluded. If there are conflicts in which items should be
+                included, all items in include are guaranteed to be included,
+                otherwise they will be excluded.
+
+        """
+        overrides = self._generate_overrides(*args)
+        filtered_items = {}
+        for item_name, item in six.iteritems(self._yapconf_items):
+            result = item.apply_filter(**kwargs)
+            if result is not None:
+                filtered_items[item_name] = result
+
+        return Box({
+            item.name: item.get_config_value(overrides) for item in
+            filtered_items.values()
+        })
+
     def load_config(self, *args, **kwargs):
         """Load a config based on the arguments passed in.
 

@@ -52,7 +52,7 @@ from yapconf.spec import YapconfSpec  # noqa: E402
 
 __author__ = """Logan Asher Jones"""
 __email__ = 'loganasherjones@gmail.com'
-__version__ = '0.3.5'
+__version__ = '0.3.6'
 
 
 FILE_TYPES = {'json', }
@@ -80,7 +80,7 @@ if etcd_support:
 if kubernetes_support:
     SUPPORTED_SOURCES.add('kubernetes')
 
-__all__ = ['YapconfSpec']
+__all__ = ['YapconfSpec', 'dump_data']
 
 
 def change_case(s, separator='-'):

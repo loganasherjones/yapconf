@@ -2,6 +2,10 @@
 History
 =======
 
+0.3.6 (2019-09-17)
+------------------
+* Adding `dump_data` to `__all__`
+
 0.3.5 (2019-09-03)
 ------------------
 * Adding initial support for loading specific config items.

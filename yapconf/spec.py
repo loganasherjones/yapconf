@@ -550,6 +550,8 @@ class YapconfSpec(object):
             return self._sources[value]
         elif value == 'ENVIRONMENT':
             return get_source(value, 'environment')
+        elif value == 'CLI':
+            return get_source(value, 'cli', spec=self)
         elif file_type in ['json', 'yaml']:
             return get_source(
                 value,

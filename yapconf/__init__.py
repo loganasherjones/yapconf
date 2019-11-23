@@ -60,6 +60,7 @@ SUPPORTED_SOURCES = {
     'dict',
     'environment',
     'json',
+    'cli',
 }
 ALL_SUPPORTED_SOURCES = {
     'dict',
@@ -68,6 +69,7 @@ ALL_SUPPORTED_SOURCES = {
     'json',
     'kubernetes',
     'yaml',
+    'cli',
 }
 
 if yaml_support:

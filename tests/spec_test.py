@@ -138,7 +138,7 @@ def test_nested_load_config(spec_with_dicts):
                 "port": 3306,
                 "verbose": False,
             },
-            "emoji": "💩",
+            "emoji": u"💩",
         }
     ),
 ])

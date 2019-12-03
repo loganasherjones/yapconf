@@ -4,11 +4,12 @@ from etcd import EtcdWatchTimedOut
 from mock import Mock, PropertyMock, patch
 
 import yapconf
+from yapconf import YapconfSpec
 from yapconf.exceptions import YapconfSourceError
 from yapconf.sources import (DictConfigSource, EnvironmentConfigSource,
                              EtcdConfigSource, JsonConfigSource,
                              KubernetesConfigSource, YamlConfigSource,
-                             get_source)
+                             CliConfigSource, get_source)
 
 original_sources = yapconf.SUPPORTED_SOURCES.copy()
 
@@ -25,6 +26,7 @@ def teardown_function(function):
     ('yaml', yapconf.SUPPORTED_SOURCES, {}),
     ('etcd', yapconf.SUPPORTED_SOURCES, {'client': 'NOT_A_ETCD_CLIENT'}),
     ('kubernetes', yapconf.SUPPORTED_SOURCES, {'client': 'NOT_A_K8S_CLIENT'}),
+    ('cli', yapconf.SUPPORTED_SOURCES, {}),
 ])
 def test_get_source_error(source_type, sources, kwargs):
     yapconf.SUPPORTED_SOURCES = sources
@@ -40,7 +42,8 @@ def test_get_source_error(source_type, sources, kwargs):
     (
         'etcd',
         {'client': Mock(spec=yapconf.etcd_client.Client)},
-        EtcdConfigSource),
+        EtcdConfigSource
+    ),
     (
         'kubernetes',
         {
@@ -49,6 +52,7 @@ def test_get_source_error(source_type, sources, kwargs):
         },
         KubernetesConfigSource
     ),
+    ('cli', {'spec': YapconfSpec({})}, CliConfigSource),
 ])
 def test_get_source(source_type, kwargs, klazz):
     source = get_source('label', source_type, **kwargs)

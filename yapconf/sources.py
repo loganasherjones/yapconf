@@ -5,6 +5,7 @@ import json
 import os
 import threading
 import time
+from argparse import ArgumentParser
 
 import six
 from watchdog.observers import Observer
@@ -88,6 +89,9 @@ def get_source(label, source_type, **kwargs):
         if 'client' in kwargs:
             kwargs.pop('client')
         return KubernetesConfigSource(label, client, name, **kwargs)
+
+    elif source_type == 'cli':
+        return CliConfigSource(label, **kwargs)
 
     else:
         raise NotImplementedError(
@@ -335,6 +339,28 @@ class EnvironmentConfigSource(DictConfigSource):
 
     def get_data(self):
         return os.environ.copy()
+
+
+class CliConfigSource(ConfigSource):
+    """Special dict config which gets its value from the environment."""
+
+    def __init__(self, label, spec=None):
+        self.type = 'cli'
+        self.spec = spec
+        super(CliConfigSource, self).__init__(label)
+
+    def validate(self):
+        if self.spec is None:
+            raise YapconfSourceError(
+                'Invalid source (%s). No spec was provided for a CLI '
+                'config source.' % self.label
+            )
+
+    def get_data(self):
+        parser = ArgumentParser()
+        self.spec.add_arguments(parser)
+        ns, _ = parser.parse_known_args()
+        return vars(ns)
 
 
 class EtcdConfigSource(ConfigSource):

@@ -838,6 +838,10 @@ class YapconfDictItem(YapconfItem):
             raise YapconfDictItemError('Dict item {0} must have children'
                                        .format(self.name))
 
+    def __deepcopy__(self, memodict={}):
+        kwargs = {k: v for k, v in self.__dict__.items() if k != "logger"}
+        return YapconfDictItem(**kwargs)
+
     def _setup_env_name(self, env_name):
         self.env_name = None
 
@@ -896,9 +900,9 @@ class YapconfDictItem(YapconfItem):
         if not filtered_items:
             return None
         else:
-            kwargs = copy.deepcopy(self.__dict__)
-            kwargs["children"] = filtered_items
-            return YapconfDictItem(**kwargs)
+            obj_copy = copy.deepcopy(self)
+            obj_copy.children = filtered_items
+            return obj_copy
 
     def migrate_config(self, current_config, config_to_migrate,
                        always_update, update_defaults):

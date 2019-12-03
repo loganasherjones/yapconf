@@ -85,6 +85,7 @@ def _generate_item(name, item_dict, env_prefix,
     init_args['description'] = item_dict.get('description')
     init_args['long_description'] = item_dict.get('long_description')
     init_args['required'] = item_dict.get('required', True)
+    init_args['cli_name'] = item_dict.get('cli_name')
     init_args['cli_short_name'] = item_dict.get('cli_short_name')
     init_args['previous_names'] = item_dict.get('previous_names')
     init_args['previous_defaults'] = item_dict.get('previous_defaults')

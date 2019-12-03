@@ -2,6 +2,12 @@
 History
 =======
 
+0.3.7 (2019-12-02)
+------------------
+* Fixed broken test
+* Adding CLI source
+* Fixed adding cli_name to items
+
 0.3.6 (2019-09-17)
 ------------------
 * Adding `dump_data` to `__all__`

@@ -43,12 +43,12 @@ ITEM_TEMPLATE = """### {name}
 """
 
 SOURCE_TYPE_LINKS = {
-    'dict': 'https://yapconf.readthedocs.io/en/stable/sources.html#dict',
-    'environment': 'https://yapconf.readthedocs.io/en/stable/sources.html#environment',
-    'etcd': 'https://yapconf.readthedocs.io/en/stable/sources.html#etcd',
-    'json': 'https://yapconf.readthedocs.io/en/stable/sources.html#json',
-    'kubernetes': 'https://yapconf.readthedocs.io/en/stable/sources.html#kubernetes',
-    'yaml': 'https://yapconf.readthedocs.io/en/stable/sources.html#yaml',
+    "dict": "https://yapconf.readthedocs.io/en/stable/sources.html#dict",
+    "environment": "https://yapconf.readthedocs.io/en/stable/sources.html#environment",
+    "etcd": "https://yapconf.readthedocs.io/en/stable/sources.html#etcd",
+    "json": "https://yapconf.readthedocs.io/en/stable/sources.html#json",
+    "kubernetes": "https://yapconf.readthedocs.io/en/stable/sources.html#kubernetes",
+    "yaml": "https://yapconf.readthedocs.io/en/stable/sources.html#yaml",
 }
 
 VALID_JSON_LINK = "[valid JSON](https://www.json.org/)"
@@ -109,15 +109,15 @@ def _build_row(row, row_maxes, row_keys, pad_value=" "):
     row_value = "|"
     for key in row_keys:
         padding = _get_padding(key, row_maxes, row[key], pad_value)
-        row_value = row_value + ' ' + row[key] + padding + ' |'
+        row_value = row_value + " " + row[key] + padding + " |"
     return row_value
 
 
 def _build_separator(row_maxes, row_keys):
     fake_row = row_maxes.copy()
     for key, value in row_maxes.items():
-        fake_row[key] = ''
-    return _build_row(fake_row, row_maxes, row_keys, pad_value='-')
+        fake_row[key] = ""
+    return _build_row(fake_row, row_maxes, row_keys, pad_value="-")
 
 
 def build_markdown_table(headers, rows, row_keys=None):
@@ -136,62 +136,60 @@ def build_markdown_table(headers, rows, row_keys=None):
     row_keys = row_keys or [key for key, value in headers.items()]
     table = [
         _build_row(headers, row_maxes, row_keys),
-        _build_separator(row_maxes, row_keys)
+        _build_separator(row_maxes, row_keys),
     ]
 
     for row in rows:
         table.append(_build_row(row, row_maxes, row_keys))
-    return '\n'.join(table) + '\n'
+    return "\n".join(table) + "\n"
 
 
 def _generate_source_description(source, app_name, source_label):
-    format_kwargs = {'app_name': app_name}
+    format_kwargs = {"app_name": app_name}
     template = ""
-    if source.type == 'dict':
+    if source.type == "dict":
         template = DICT_DESCRIPTION
 
-    elif source.type == 'environment':
+    elif source.type == "environment":
         template = ENVIRONMENT_DESCRIPTION
 
-    elif source.type == 'etcd':
+    elif source.type == "etcd":
         template = ETCD_DESCRIPTION
-        format_kwargs['key'] = source.key
+        format_kwargs["key"] = source.key
 
-    elif source.type == 'json':
+    elif source.type == "json":
         if source.filename:
             template = JSON_FILE_DESCRIPTION
-            format_kwargs['filename'] = source.filename
-            format_kwargs['valid_link'] = VALID_JSON_LINK
+            format_kwargs["filename"] = source.filename
+            format_kwargs["valid_link"] = VALID_JSON_LINK
         else:
             template = JSON_DATA_DESCRIPTION
 
-    elif source.type == 'kubernetes':
+    elif source.type == "kubernetes":
         template = K8S_DESCRIPTION
-        format_kwargs['config_map_name'] = source.name
-        format_kwargs['config_map_namespace'] = source.namespace
+        format_kwargs["config_map_name"] = source.name
+        format_kwargs["config_map_namespace"] = source.namespace
 
         if source.key:
             template = "\n".join([t for t in [template, K8S_KEY_DESCRIPTION]])
-            format_kwargs['source_label'] = source_label
-            format_kwargs['key'] = source.key
-            format_kwargs['config_type'] = source.config_type
-            if source.config_type == 'yaml':
-                format_kwargs['valid_link'] = VALID_YAML_LINK
+            format_kwargs["source_label"] = source_label
+            format_kwargs["key"] = source.key
+            format_kwargs["config_type"] = source.config_type
+            if source.config_type == "yaml":
+                format_kwargs["valid_link"] = VALID_YAML_LINK
             else:
-                format_kwargs['valid_link'] = VALID_JSON_LINK
+                format_kwargs["valid_link"] = VALID_JSON_LINK
 
-    elif source.type == 'yaml':
+    elif source.type == "yaml":
         template = YAML_DESCRIPTION
-        format_kwargs['filename'] = source.filename
-        format_kwargs['valid_link'] = VALID_YAML_LINK
+        format_kwargs["filename"] = source.filename
+        format_kwargs["valid_link"] = VALID_YAML_LINK
 
     return template.format(**format_kwargs)
 
 
 def _generate_source_section(source_label, source, app_name):
-    source_type_link = (
-        "[%s](%s)" % (source.type, SOURCE_TYPE_LINKS[source.type])
-    )
+    source_type_link = "[%s](%s)" % (source.type, SOURCE_TYPE_LINKS[source.type],)
 
     source_type_description = _generate_source_description(
         source, app_name, source_label
@@ -205,8 +203,8 @@ def _generate_source_section(source_label, source, app_name):
 
 def _generate_item_table(item):
     headers = {
-        'attribute': 'Attribute',
-        'value': 'Value',
+        "attribute": "Attribute",
+        "value": "Value",
     }
     if item.cli_support:
         cli_names = item.cli_names
@@ -214,86 +212,60 @@ def _generate_item_table(item):
         cli_names = None
 
     rows = [
-        {
-            'attribute': '**item_type**',
-            'value': '`%s`' % item.item_type,
-        },
-        {
-            'attribute': '**default**',
-            'value': '`%s`' % item.default,
-        },
-        {
-            'attribute': '**env_name**',
-            'value': '`%s`' % item.env_name,
-        },
-        {
-            'attribute': '**required**',
-            'value': '`%s`' % item.required,
-        },
-        {
-            'attribute': '**cli_name**',
-            'value': '`%s`' % cli_names,
-        },
-        {
-            'attribute': '**fallback**',
-            'value': '`%s`' % item.fallback
-        },
-        {
-            'attribute': '**choices**',
-            'value': '`%s`' % item.choices,
-        },
+        {"attribute": "**item_type**", "value": "`%s`" % item.item_type,},
+        {"attribute": "**default**", "value": "`%s`" % item.default,},
+        {"attribute": "**env_name**", "value": "`%s`" % item.env_name,},
+        {"attribute": "**required**", "value": "`%s`" % item.required,},
+        {"attribute": "**cli_name**", "value": "`%s`" % cli_names,},
+        {"attribute": "**fallback**", "value": "`%s`" % item.fallback},
+        {"attribute": "**choices**", "value": "`%s`" % item.choices,},
     ]
-    return build_markdown_table(headers, rows, ['attribute', 'value'])
+    return build_markdown_table(headers, rows, ["attribute", "value"])
 
 
 def _generate_item_options(item, app_name):
     options = []
     if item.env_name:
         options.append(
-            'You can set {name} from the environment by setting the '
-            'environment variable `{env_name}`'.format(
-                name=item.fq_name,
-                env_name=item.env_name
+            "You can set {name} from the environment by setting the "
+            "environment variable `{env_name}`".format(
+                name=item.fq_name, env_name=item.env_name
             )
         )
 
     if item.cli_support:
         cli_names = item.cli_names
         options.append(
-            'You can set `{name}` from the command-line by specifying '
-            '`{cli_names}` at {app_name}\'s entrypoint.'.format(
-                name=item.fq_name,
-                cli_names=cli_names,
-                app_name=app_name,
+            "You can set `{name}` from the command-line by specifying "
+            "`{cli_names}` at {app_name}'s entrypoint.".format(
+                name=item.fq_name, cli_names=cli_names, app_name=app_name,
             )
         )
 
     if item.fallback:
         option = (
-            'If `{name}` is not set in any of the sources listed, it will '
-            'attempt to fallback to the value set in `{fallback}`.'
-        ).format(
-            name=item.fq_name,
-            fallback=item.fallback
-        )
+            "If `{name}` is not set in any of the sources listed, it will "
+            "attempt to fallback to the value set in `{fallback}`."
+        ).format(name=item.fq_name, fallback=item.fallback)
 
         if item.default:
             option += (
-                ' If neither the fallback nor the original key is found '
-                'then the value will fallback to the default of `{default}`'
-            ).format(default=('%s' % item.default))
+                " If neither the fallback nor the original key is found "
+                "then the value will fallback to the default of `{default}`"
+            ).format(default=("%s" % item.default))
 
         options.append(option)
     elif item.default:
-        options.append((
-            'If `{name}` is not set in any of the sources listed, it will '
-            'fallback to the default value `{value}`'.format(
-                name=item.fq_name,
-                value=item.default
+        options.append(
+            (
+                "If `{name}` is not set in any of the sources listed, it will "
+                "fallback to the default value `{value}`".format(
+                    name=item.fq_name, value=item.default
+                )
             )
-        ))
+        )
 
-    return '\n\n'.join(options)
+    return "\n\n".join(options)
 
 
 def _generate_item_section(item, app_name):
@@ -311,10 +283,10 @@ def _generate_item_section(item, app_name):
 
 def _get_table_row_from_item(item):
     return {
-        'name': '[' + item.fq_name + '](#' + item.fq_name + ')',
-        'type': item.item_type,
-        'default': '%s' % item.default,
-        'description': '%s' % item.description,
+        "name": "[" + item.fq_name + "](#" + item.fq_name + ")",
+        "type": item.item_type,
+        "default": "%s" % item.default,
+        "description": "%s" % item.description,
     }
 
 
@@ -324,8 +296,7 @@ def _generate_item_sections(items, app_name):
     for item in items:
         if isinstance(item, YapconfDictItem):
             tmp_rows, tmp_sections = _generate_item_sections(
-                _sorted_dict_values(item.children),
-                app_name
+                _sorted_dict_values(item.children), app_name
             )
             rows += tmp_rows
             item_sections += tmp_sections
@@ -356,38 +327,33 @@ def generate_markdown_doc(app_name, spec):
     # Apply standard headers.
     sections = [
         HEADER.format(app_name=app_name),
-        SOURCES_HEADER.format(app_name=app_name)
+        SOURCES_HEADER.format(app_name=app_name),
     ]
 
     # Generate the sources section of the documentation
     sorted_labels = sorted(list(spec.sources))
     for label in sorted_labels:
-        sections.append(
-            _generate_source_section(label, spec.sources[label], app_name)
-        )
+        sections.append(_generate_source_section(label, spec.sources[label], app_name))
 
     # Generate the config section.
     sections.append(CONFIG_HEADER.format(app_name=app_name))
     table_rows, item_sections = _generate_item_sections(
-        _sorted_dict_values(spec.items),
-        app_name
+        _sorted_dict_values(spec.items), app_name
     )
 
     headers = {
-        'name': 'Name',
-        'type': 'Type',
-        'default': 'Default',
-        'description': 'Description'
+        "name": "Name",
+        "type": "Type",
+        "default": "Default",
+        "description": "Description",
     }
 
     sections.append(
         build_markdown_table(
-            headers,
-            table_rows,
-            ['name', 'type', 'default', 'description'],
+            headers, table_rows, ["name", "type", "default", "description"],
         )
     )
     for item_section in item_sections:
         sections.append(item_section)
 
-    return '\n'.join([section for section in sections])
+    return "\n".join([section for section in sections])

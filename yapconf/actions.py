@@ -19,14 +19,16 @@ class AppendReplace(argparse.Action):
 class AppendBoolean(argparse.Action):
     """Action used for appending boolean values on the command-line"""
 
-    def __init__(self,
-                 option_strings,
-                 dest,
-                 const,
-                 default=None,
-                 required=False,
-                 help=None,
-                 metavar=None):
+    def __init__(
+        self,
+        option_strings,
+        dest,
+        const,
+        default=None,
+        required=False,
+        help=None,
+        metavar=None,
+    ):
         super(AppendBoolean, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -35,7 +37,8 @@ class AppendBoolean(argparse.Action):
             default=default,
             required=required,
             help=help,
-            metavar=metavar)
+            metavar=metavar,
+        )
 
     def __call__(self, parser, namespace, values, option_string=None):
         # if we find an attribute and it is equal to the default,
@@ -65,31 +68,34 @@ class MergeAction(argparse.Action):
         separator: A separator to split up keys in the dictionary
     """
 
-    def __init__(self,
-                 option_strings,
-                 dest,
-                 nargs=None,
-                 const=None,
-                 default=None,
-                 type=None,
-                 choices=None,
-                 required=False,
-                 help=None,
-                 metavar=None,
-                 child_action=None,
-                 separator='.',
-                 child_const=None):
-        super(MergeAction, self).__init__(option_strings=option_strings,
-                                          dest=dest,
-                                          nargs=nargs,
-                                          const=const,
-                                          default=default,
-                                          type=type,
-                                          choices=choices,
-                                          required=required,
-                                          help=help,
-                                          metavar=metavar,
-                                          )
+    def __init__(
+        self,
+        option_strings,
+        dest,
+        nargs=None,
+        const=None,
+        default=None,
+        type=None,
+        choices=None,
+        required=False,
+        help=None,
+        metavar=None,
+        child_action=None,
+        separator=".",
+        child_const=None,
+    ):
+        super(MergeAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=default,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar,
+        )
         self.child_action = child_action
         self.child_const = child_const
         self.separator = separator
@@ -114,10 +120,10 @@ class MergeAction(argparse.Action):
         return current_dict, self.parent_names[-1]
 
     def _merge_value(self, leaf_dict, name, value):
-        if self.child_action == 'store_true':
+        if self.child_action == "store_true":
             leaf_dict[name] = True
 
-        elif self.child_action == 'store_false':
+        elif self.child_action == "store_false":
             leaf_dict[name] = False
 
         elif self.child_action == AppendBoolean:
@@ -126,7 +132,7 @@ class MergeAction(argparse.Action):
             else:
                 leaf_dict[name] = [self.child_const]
 
-        elif self.child_action == 'store':
+        elif self.child_action == "store":
             leaf_dict[name] = value
 
         elif self.child_action == AppendReplace:
@@ -136,8 +142,9 @@ class MergeAction(argparse.Action):
                 leaf_dict[name] = [value]
 
         else:
-            raise ValueError("Don't know how to do action: {0}"
-                             .format(self.child_action))
+            raise ValueError(
+                "Don't know how to do action: {0}".format(self.child_action)
+            )
 
     def __call__(self, parser, namespace, values, option_string=None):
         if hasattr(namespace, self.dest):

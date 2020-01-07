@@ -34,9 +34,7 @@ class ConfigChangeHandler(object):
 
     def _call_spec_handlers(self, new_config):
         flattened_config = yapconf.flatten(new_config, self.spec._separator)
-        flattened_current = yapconf.flatten(
-            self.current_config, self.spec._separator
-        )
+        flattened_current = yapconf.flatten(self.current_config, self.spec._separator)
 
         for key, value in flattened_config.items():
             if value != flattened_current.get(key):
@@ -48,15 +46,15 @@ class ConfigChangeHandler(object):
 class FileHandler(RegexMatchingEventHandler):
     """Watchdog handler that only watches a specific file."""
 
-    def __init__(self, filename, handler, file_type='json'):
-        super(FileHandler, self).__init__(regexes=[r'^%s$' % filename])
+    def __init__(self, filename, handler, file_type="json"):
+        super(FileHandler, self).__init__(regexes=[r"^%s$" % filename])
         self._handler = handler
         self._filename = filename
         self._file_type = file_type
 
     def on_deleted(self, event):
         raise YapconfSourceError(
-            'While watching file %s the file was deleted. Aborting watch.'
+            "While watching file %s the file was deleted. Aborting watch."
             % self._filename
         )
 
@@ -66,7 +64,5 @@ class FileHandler(RegexMatchingEventHandler):
 
     def _load_config(self, filename):
         return yapconf.load_file(
-            filename,
-            file_type=self._file_type,
-            klazz=YapconfLoadError
+            filename, file_type=self._file_type, klazz=YapconfLoadError
         )

@@ -9,19 +9,33 @@ import six
 
 import yapconf
 from yapconf.actions import AppendBoolean, AppendReplace, MergeAction
-from yapconf.exceptions import (YapconfDictItemError, YapconfItemError,
-                                YapconfItemNotFound, YapconfListItemError,
-                                YapconfValueError)
+from yapconf.exceptions import (
+    YapconfDictItemError,
+    YapconfItemError,
+    YapconfItemNotFound,
+    YapconfListItemError,
+    YapconfValueError,
+)
 
 if sys.version_info > (3,):
     long = int
     unicode = str
 
-TYPES = ('str', 'int', 'long', 'float', 'bool', 'complex', 'dict', 'list', )
+TYPES = (
+    "str",
+    "int",
+    "long",
+    "float",
+    "bool",
+    "complex",
+    "dict",
+    "list",
+)
 
 
-def from_specification(specification, env_prefix=None, separator='.',
-                       parent_names=None):
+def from_specification(
+    specification, env_prefix=None, separator=".", parent_names=None
+):
     """Used to create YapconfItems from a specification dictionary.
 
     Args:
@@ -38,87 +52,89 @@ def from_specification(specification, env_prefix=None, separator='.',
     items = {}
     for item_name, item_info in six.iteritems(specification):
         names = copy.copy(parent_names) if parent_names else []
-        items[item_name] = _generate_item(item_name,
-                                          item_info,
-                                          env_prefix,
-                                          separator,
-                                          names)
+        items[item_name] = _generate_item(
+            item_name, item_info, env_prefix, separator, names
+        )
     return items
 
 
 def _get_item_cli_choices(item_type, item_dict):
-    if item_type in ['list', 'dict']:
+    if item_type in ["list", "dict"]:
         return None
     else:
-        return item_dict.get('cli_choices')
+        return item_dict.get("cli_choices")
 
 
-def _get_item_children(item_name, item_dict, env_prefix,
-                       parent_names, separator, item_type):
-    if item_dict.get('items'):
-        if item_type == 'list':
+def _get_item_children(
+    item_name, item_dict, env_prefix, parent_names, separator, item_type
+):
+    if item_dict.get("items"):
+        if item_type == "list":
             # List items are only allowed one child. This
             # child name is unused, so we just use the list
             # name. This helps the flattening process stay sane.
-            child_key = list(item_dict['items'].keys())[0]
-            child_items = {item_name: item_dict['items'][child_key]}
+            child_key = list(item_dict["items"].keys())[0]
+            child_items = {item_name: item_dict["items"][child_key]}
         else:
-            child_items = item_dict['items']
+            child_items = item_dict["items"]
             parent_names.append(item_name)
 
-        return from_specification(child_items,
-                                  env_prefix=env_prefix,
-                                  separator=separator,
-                                  parent_names=parent_names)
+        return from_specification(
+            child_items,
+            env_prefix=env_prefix,
+            separator=separator,
+            parent_names=parent_names,
+        )
     else:
         return None
 
 
-def _generate_item(name, item_dict, env_prefix,
-                   separator, parent_names):
-    init_args = {'name': name, 'separator': separator}
+def _generate_item(name, item_dict, env_prefix, separator, parent_names):
+    init_args = {"name": name, "separator": separator}
 
-    item_type = item_dict.get('type', 'str')
-    init_args['item_type'] = item_type
-    init_args['bootstrap'] = item_dict.get('bootstrap', False)
-    init_args['default'] = item_dict.get('default')
-    init_args['description'] = item_dict.get('description')
-    init_args['long_description'] = item_dict.get('long_description')
-    init_args['required'] = item_dict.get('required', True)
-    init_args['cli_name'] = item_dict.get('cli_name')
-    init_args['cli_short_name'] = item_dict.get('cli_short_name')
-    init_args['previous_names'] = item_dict.get('previous_names')
-    init_args['previous_defaults'] = item_dict.get('previous_defaults')
-    init_args['cli_expose'] = item_dict.get('cli_expose', True)
-    init_args['env_name'] = item_dict.get('env_name', None)
-    init_args['format_cli'] = item_dict.get('format_cli', True)
-    init_args['format_env'] = item_dict.get('format_env', True)
-    init_args['apply_env_prefix'] = item_dict.get('apply_env_prefix', True)
-    init_args['env_prefix'] = env_prefix
-    init_args['choices'] = item_dict.get('choices', None)
-    init_args['alt_env_names'] = item_dict.get('alt_env_names', [])
-    init_args['validator'] = item_dict.get('validator')
-    init_args['fallback'] = item_dict.get('fallback')
-    init_args['watch_target'] = item_dict.get('watch_target')
+    item_type = item_dict.get("type", "str")
+    init_args["item_type"] = item_type
+    init_args["bootstrap"] = item_dict.get("bootstrap", False)
+    init_args["default"] = item_dict.get("default")
+    init_args["description"] = item_dict.get("description")
+    init_args["long_description"] = item_dict.get("long_description")
+    init_args["required"] = item_dict.get("required", True)
+    init_args["cli_name"] = item_dict.get("cli_name")
+    init_args["cli_short_name"] = item_dict.get("cli_short_name")
+    init_args["previous_names"] = item_dict.get("previous_names")
+    init_args["previous_defaults"] = item_dict.get("previous_defaults")
+    init_args["cli_expose"] = item_dict.get("cli_expose", True)
+    init_args["env_name"] = item_dict.get("env_name", None)
+    init_args["format_cli"] = item_dict.get("format_cli", True)
+    init_args["format_env"] = item_dict.get("format_env", True)
+    init_args["apply_env_prefix"] = item_dict.get("apply_env_prefix", True)
+    init_args["env_prefix"] = env_prefix
+    init_args["choices"] = item_dict.get("choices", None)
+    init_args["alt_env_names"] = item_dict.get("alt_env_names", [])
+    init_args["validator"] = item_dict.get("validator")
+    init_args["fallback"] = item_dict.get("fallback")
+    init_args["watch_target"] = item_dict.get("watch_target")
 
     if parent_names:
-        init_args['prefix'] = separator.join(parent_names)
+        init_args["prefix"] = separator.join(parent_names)
     else:
-        init_args['prefix'] = None
+        init_args["prefix"] = None
 
-    init_args['cli_choices'] = _get_item_cli_choices(item_type, item_dict)
-    init_args['children'] = _get_item_children(item_name=name,
-                                               item_dict=item_dict,
-                                               env_prefix=env_prefix,
-                                               parent_names=parent_names,
-                                               separator=separator,
-                                               item_type=item_type)
+    init_args["cli_choices"] = _get_item_cli_choices(item_type, item_dict)
+    init_args["children"] = _get_item_children(
+        item_name=name,
+        item_dict=item_dict,
+        env_prefix=env_prefix,
+        parent_names=parent_names,
+        separator=separator,
+        item_type=item_type,
+    )
 
-    if item_type == 'dict':
+    if item_type == "dict":
         return YapconfDictItem(**init_args)
-    elif item_type == 'list':
+    elif item_type == "list":
         return YapconfListItem(**init_args)
-    elif item_type == 'bool':
+    elif item_type == "bool":
         return YapconfBoolItem(**init_args)
     else:
         return YapconfItem(**init_args)
@@ -180,41 +196,41 @@ class YapconfItem(object):
 
     def __init__(self, name, **kwargs):
         self.name = name
-        self.item_type = kwargs.get('item_type', 'str')
-        self.default = kwargs.get('default', None)
-        self.required = kwargs.get('required', True)
-        self.separator = kwargs.get('separator', '.')
-        self.validator = kwargs.get('validator')
-        self.choices = kwargs.get('choices')
-        self.prefix = kwargs.get('prefix', None)
-        self.bootstrap = kwargs.get('bootstrap', False)
-        self.children = kwargs.get('children') or {}
-        self.fallback = kwargs.get('fallback')
+        self.item_type = kwargs.get("item_type", "str")
+        self.default = kwargs.get("default", None)
+        self.required = kwargs.get("required", True)
+        self.separator = kwargs.get("separator", ".")
+        self.validator = kwargs.get("validator")
+        self.choices = kwargs.get("choices")
+        self.prefix = kwargs.get("prefix", None)
+        self.bootstrap = kwargs.get("bootstrap", False)
+        self.children = kwargs.get("children") or {}
+        self.fallback = kwargs.get("fallback")
 
-        self.description = kwargs.get('description', None)
-        self.long_description = kwargs.get('long_description', None)
+        self.description = kwargs.get("description", None)
+        self.long_description = kwargs.get("long_description", None)
 
-        self.previous_names = kwargs.get('previous_names') or []
-        self.previous_defaults = kwargs.get('previous_defaults') or []
+        self.previous_names = kwargs.get("previous_names") or []
+        self.previous_defaults = kwargs.get("previous_defaults") or []
 
-        self.format_cli = kwargs.get('format_cli', True)
-        self.cli_short_name = kwargs.get('cli_short_name', None)
-        self.cli_choices = kwargs.get('cli_choices') or []
-        self.cli_name = kwargs.get('cli_name')
-        self.cli_expose = kwargs.get('cli_expose', True)
-        self.watch_target = kwargs.get('watch_target')
+        self.format_cli = kwargs.get("format_cli", True)
+        self.cli_short_name = kwargs.get("cli_short_name", None)
+        self.cli_choices = kwargs.get("cli_choices") or []
+        self.cli_name = kwargs.get("cli_name")
+        self.cli_expose = kwargs.get("cli_expose", True)
+        self.watch_target = kwargs.get("watch_target")
 
         if self.prefix:
             self.fq_name = self.separator.join([self.prefix, self.name])
         else:
             self.fq_name = self.name
 
-        self.format_env = kwargs.get('format_env', True)
-        self.env_prefix = kwargs.get('env_prefix') or ''
-        self.apply_env_prefix = kwargs.get('apply_env_prefix', True)
-        self.env_name = self._setup_env_name(kwargs.get('env_name'))
+        self.format_env = kwargs.get("format_env", True)
+        self.env_prefix = kwargs.get("env_prefix") or ""
+        self.apply_env_prefix = kwargs.get("apply_env_prefix", True)
+        self.env_name = self._setup_env_name(kwargs.get("env_name"))
         self.alt_env_names = []
-        for alt_env_name in kwargs.get('alt_env_names') or []:
+        for alt_env_name in kwargs.get("alt_env_names") or []:
             alt_name = self._setup_env_name(alt_env_name)
             if alt_name is not None:
                 self.alt_env_names.append(alt_name)
@@ -224,8 +240,10 @@ class YapconfItem(object):
         self.logger = logging.getLogger(__name__)
 
         if not self.cli_support and self.cli_expose:
-            self.logger.info("Item {0} does not have cli_support, setting "
-                             "cli_expose to False.".format(self.name))
+            self.logger.info(
+                "Item {0} does not have cli_support, setting "
+                "cli_expose to False.".format(self.name)
+            )
             self.cli_expose = False
 
         self._validate()
@@ -239,7 +257,7 @@ class YapconfItem(object):
 
     @property
     def cli_names(self):
-        return "/".join(self._get_argparse_names('-'))
+        return "/".join(self._get_argparse_names("-"))
 
     def update_default(self, new_default, respect_none=False):
         """Update our current default with the new_default.
@@ -254,8 +272,9 @@ class YapconfItem(object):
         elif new_default is None and respect_none:
             self.default = None
 
-    def migrate_config(self, current_config, config_to_migrate,
-                       always_update, update_defaults):
+    def migrate_config(
+        self, current_config, config_to_migrate, always_update, update_defaults
+    ):
         """Migrate config value in current_config, updating config_to_migrate.
 
         Given the current_config object, it will attempt to find a value
@@ -276,8 +295,7 @@ class YapconfItem(object):
             update_defaults (bool): Update values found in previous_defaults
         """
         value = self._search_config_for_possible_names(current_config)
-        self._update_config(config_to_migrate, value,
-                            always_update, update_defaults)
+        self._update_config(config_to_migrate, value, always_update, update_defaults)
 
     def add_argument(self, parser, bootstrap=False):
         """Add this item as an argument to the given parser.
@@ -343,20 +361,17 @@ class YapconfItem(object):
                 conversion, an exception was raised.
 
         """
-        label, override, key = self._search_overrides(
-            overrides, skip_environment
-        )
+        label, override, key = self._search_overrides(overrides, skip_environment)
 
         if override is None and self.default is None and self.required:
             raise YapconfItemNotFound(
-                'Could not find config value for {0}'.format(self.fq_name),
-                self
+                "Could not find config value for {0}".format(self.fq_name), self,
             )
 
         if override is None:
             self.logger.debug(
-                'Config value not found for {0}, falling back to default.'
-                .format(self.name)
+                "Config value not found for {0}, falling back to "
+                "default.".format(self.name)
             )
             value = self.default
         else:
@@ -371,56 +386,63 @@ class YapconfItem(object):
 
     def _validate_value(self, value):
         if self.choices and value not in self.choices:
-            raise YapconfValueError("Invalid value provided (%s) for %s."
-                                    "Valid values are %s" %
-                                    (value, self.fq_name, self.choices))
+            raise YapconfValueError(
+                "Invalid value provided (%s) for %s."
+                "Valid values are %s" % (value, self.fq_name, self.choices)
+            )
         if self.validator and not self.validator(value):
-            raise YapconfValueError('Invalid value provided (%s) for %s.' %
-                                    (value, self.fq_name))
+            raise YapconfValueError(
+                "Invalid value provided (%s) for %s." % (value, self.fq_name)
+            )
 
     def convert_config_value(self, value, label):
         try:
-            if self.item_type == 'str':
+            if self.item_type == "str":
                 if isinstance(value, unicode):
                     return value
                 else:
                     return str(value)
-            elif self.item_type == 'int':
+            elif self.item_type == "int":
                 return int(value)
-            elif self.item_type == 'long':
+            elif self.item_type == "long":
                 return long(value)
-            elif self.item_type == 'float':
+            elif self.item_type == "float":
                 return float(value)
-            elif self.item_type == 'complex':
+            elif self.item_type == "complex":
                 return complex(value)
             else:
-                raise YapconfItemError("Do not know how to convert type {0} "
-                                       "for {1} found in {2}"
-                                       .format(self.item_type, self.name,
-                                               label))
+                raise YapconfItemError(
+                    "Do not know how to convert type {0} "
+                    "for {1} found in {2}".format(self.item_type, self.name, label)
+                )
         except (TypeError, ValueError) as ex:
-            raise YapconfValueError("Tried to convert {0} to {1} but got an "
-                                    "error instead. Found in {2}. Error "
-                                    "Message: {3}"
-                                    .format(self.name, self.item_type, label,
-                                            ex), ex)
+            raise YapconfValueError(
+                "Tried to convert {0} to {1} but got an "
+                "error instead. Found in {2}. Error "
+                "Message: {3}".format(self.name, self.item_type, label, ex),
+                ex,
+            )
 
     def _validate(self):
         if self.separator in self.name:
-            raise YapconfItemError("Cannot have a name with {0} in it. Either "
-                                   "choose a different name or choose a "
-                                   "different separator."
-                                   .format(self.separator))
+            raise YapconfItemError(
+                "Cannot have a name with {0} in it. Either "
+                "choose a different name or choose a "
+                "different separator.".format(self.separator)
+            )
 
         if self.item_type not in TYPES:
-            raise YapconfItemError("Invalid type provided ({0}) valid types "
-                                   "are: {1}"
-                                   .format(self.item_type, TYPES))
+            raise YapconfItemError(
+                "Invalid type provided ({0}) valid types "
+                "are: {1}".format(self.item_type, TYPES)
+            )
 
         if self.cli_short_name and len(self.cli_short_name) != 1:
-            raise YapconfItemError("CLI Short name ({0}) can only be a single "
-                                   "character.".format(self.cli_short_name))
-        elif self.cli_short_name == '-':
+            raise YapconfItemError(
+                "CLI Short name ({0}) can only be a single "
+                "character.".format(self.cli_short_name)
+            )
+        elif self.cli_short_name == "-":
             raise YapconfItemError("CLI Short name cannot be '-'")
 
         if self.default:
@@ -437,8 +459,7 @@ class YapconfItem(object):
 
         if self.format_env:
             return yapconf.change_case(
-                self.env_prefix +
-                "_".join(self.fq_name.split(self.separator)), "_"
+                self.env_prefix + "_".join(self.fq_name.split(self.separator)), "_",
             ).upper()
         else:
             return "".join(self.fq_name.split(self.separator))
@@ -451,41 +472,34 @@ class YapconfItem(object):
 
     def _name_in_environment(self, env_dict):
         for name in self.all_env_names:
-            if (
-                name in env_dict and
-                env_dict[name] is not None and
-                env_dict[name] != ''
-            ):
+            if name in env_dict and env_dict[name] is not None and env_dict[name] != "":
                 return name
         return None
 
     def _search_overrides(self, overrides, skip_environment=False):
         label_to_return, override_to_return, key_to_return = None, None, None
         for label, info in overrides:
-            if label == 'ENVIRONMENT' and not skip_environment:
+            if label == "ENVIRONMENT" and not skip_environment:
                 name = self._name_in_environment(info)
                 if name:
                     self.logger.debug(
-                        'Found config value for {0} in {1}'
-                        .format(self.name, label)
+                        "Found config value for {0} in {1}".format(self.name, label)
                     )
                     return label, info, name
 
             elif self.fq_name in info and info[self.fq_name] is not None:
                 self.logger.debug(
-                    'Found config value for {0} in {1}'
-                    .format(self.fq_name, label)
+                    "Found config value for {0} in {1}".format(self.fq_name, label)
                 )
                 return label, info, self.fq_name
 
             elif (
-                self.fallback in info and
-                info[self.fallback] is not None and
-                not label_to_return
+                self.fallback in info
+                and info[self.fallback] is not None
+                and not label_to_return
             ):
                 self.logger.debug(
-                    'Found fallback value for {0} in {1}'
-                    .format(self.fq_name, label)
+                    "Found fallback value for {0} in {1}".format(self.fq_name, label)
                 )
                 label_to_return = label
                 override_to_return = info
@@ -500,8 +514,11 @@ class YapconfItem(object):
         if not self.prefix:
             return expected_prefix
         else:
-            return expected_prefix + chars.join(
-                self.prefix.split(self.separator)) + expected_suffix
+            return (
+                expected_prefix
+                + chars.join(self.prefix.split(self.separator))
+                + expected_suffix
+            )
 
     def _search_config_for_fq_name(self, fq_name, config_to_search):
         names = fq_name.split(self.separator)
@@ -522,52 +539,60 @@ class YapconfItem(object):
 
     def _update_config(self, config, value, always_update, update_defaults):
         if value is None:
-            self.logger.debug("Key {0} was not found in the current config. "
-                              "Setting to default value {1}"
-                              .format(self.name, self.default))
+            self.logger.debug(
+                "Key {0} was not found in the current config. "
+                "Setting to default value {1}".format(self.name, self.default)
+            )
             config[self.name] = self.default
 
         elif always_update:
-            self.logger.debug("Key {0} was found, but always_update is set "
-                              "to true so we will update the value to the "
-                              "default from the specification. Old value: "
-                              "{1}, New Value: {2}"
-                              .format(self.name, value, self.default))
+            self.logger.debug(
+                "Key {0} was found, but always_update is set "
+                "to true so we will update the value to the "
+                "default from the specification. Old value: "
+                "{1}, New Value: {2}".format(self.name, value, self.default)
+            )
             config[self.name] = self.default
 
         elif value in self.previous_defaults and update_defaults:
-            self.logger.debug("Key {0} was found, but it was a previous "
-                              "default value; update_defaults was set to "
-                              "true so we will update the value to the "
-                              "newest default. Old Value: {1}, New Value: "
-                              "{2}".format(self.name, value, self.default))
+            self.logger.debug(
+                "Key {0} was found, but it was a previous "
+                "default value; update_defaults was set to "
+                "true so we will update the value to the "
+                "newest default. Old Value: {1}, New Value: "
+                "{2}".format(self.name, value, self.default)
+            )
             config[self.name] = self.default
 
         else:
-            self.logger.debug("Key {0} was found, not changing value from {1}"
-                              .format(self.name, value))
+            self.logger.debug(
+                "Key {0} was found, not changing value from {1}".format(
+                    self.name, value
+                )
+            )
             config[self.name] = value
 
     def _get_argparse_action(self, parent_action=True):
         if self.prefix and parent_action:
             return MergeAction
         else:
-            return 'store'
+            return "store"
 
     def _get_argparse_type(self):
-        if self.item_type == 'str':
+        if self.item_type == "str":
             return str
-        elif self.item_type == 'int':
+        elif self.item_type == "int":
             return int
-        elif self.item_type == 'long':
+        elif self.item_type == "long":
             return long
-        elif self.item_type == 'float':
+        elif self.item_type == "float":
             return float
-        elif self.item_type == 'complex':
+        elif self.item_type == "complex":
             return complex
         else:
-            raise YapconfItemError("Do not know how to generate CLI "
-                                   "type for {0}".format(self.item_type))
+            raise YapconfItemError(
+                "Do not know how to generate CLI " "type for {0}".format(self.item_type)
+            )
 
     def _get_argparse_choices(self):
         return self.cli_choices or None
@@ -580,25 +605,27 @@ class YapconfItem(object):
         else:
             cli_name = name
         if self.cli_short_name:
-            return ["{0}{1}".format(cli_prefix, cli_name),
-                    "{0}{1}".format(prefix_chars, self.cli_short_name)]
+            return [
+                "{0}{1}".format(cli_prefix, cli_name),
+                "{0}{1}".format(prefix_chars, self.cli_short_name),
+            ]
         else:
             return ["{0}{1}".format(cli_prefix, cli_name)]
 
     def _get_argparse_kwargs(self, bootstrap):
         kwargs = {
-            'action': self._get_argparse_action(),
-            'default': None,
-            'type': self._get_argparse_type(),
-            'choices': self._get_argparse_choices(),
-            'required': False,
-            'help': self.description,
-            'dest': self.fq_name,
+            "action": self._get_argparse_action(),
+            "default": None,
+            "type": self._get_argparse_type(),
+            "choices": self._get_argparse_choices(),
+            "required": False,
+            "help": self.description,
+            "dest": self.fq_name,
         }
 
         if self.prefix:
-            kwargs['child_action'] = self._get_argparse_action(False)
-            kwargs['separator'] = self.separator
+            kwargs["child_action"] = self._get_argparse_action(False)
+            kwargs["separator"] = self.separator
 
         return kwargs
 
@@ -607,13 +634,29 @@ class YapconfBoolItem(YapconfItem):
     """A YapconfItem specifically for Boolean behavior"""
 
     # Values to interpret as True (not case sensitive)
-    TRUTHY_VALUES = ('y', 'yes', 't', 'true', '1', 1, True, )
+    TRUTHY_VALUES = (
+        "y",
+        "yes",
+        "t",
+        "true",
+        "1",
+        1,
+        True,
+    )
 
     # Values to interpret as False (not case sensitive)
-    FALSY_VALUES = ('n', 'no', 'f', 'false', '0', 0, False, )
+    FALSY_VALUES = (
+        "n",
+        "no",
+        "f",
+        "false",
+        "0",
+        0,
+        False,
+    )
 
     def __init__(self, name, **kwargs):
-        kwargs['item_type'] = 'bool'
+        kwargs["item_type"] = "bool"
         super(YapconfBoolItem, self).__init__(name, **kwargs)
 
     def add_argument(self, parser, bootstrap=False):
@@ -665,19 +708,20 @@ class YapconfBoolItem(YapconfItem):
         elif value in self.FALSY_VALUES:
             return False
         else:
-            raise YapconfValueError("Cowardly refusing to interpret "
-                                    "config value as a boolean. Name: "
-                                    "{0}, Value: {1}"
-                                    .format(self.name, value))
+            raise YapconfValueError(
+                "Cowardly refusing to interpret "
+                "config value as a boolean. Name: "
+                "{0}, Value: {1}".format(self.name, value)
+            )
 
     def _get_argparse_action(self, parent_action=True):
 
         if self.prefix and parent_action:
             return MergeAction
         elif self.default:
-            return 'store_false'
+            return "store_false"
         else:
-            return 'store_true'
+            return "store_true"
 
     def _get_argparse_names(self, prefix_chars):
         cli_prefix = self._format_prefix_for_cli(prefix_chars)
@@ -696,24 +740,26 @@ class YapconfBoolItem(YapconfItem):
         full_name = "{0}{1}".format(full_prefix, cli_name)
 
         if self.cli_short_name:
-            return [full_name, "{0}{1}".format(full_prefix,
-                                               self.cli_short_name)]
+            return [
+                full_name,
+                "{0}{1}".format(full_prefix, self.cli_short_name),
+            ]
         else:
             return [full_name]
 
     def _get_argparse_kwargs(self, bootstrap):
         kwargs = {
-            'action': self._get_argparse_action(),
-            'default': None,
-            'required': False,
-            'help': self.description,
-            'dest': self.fq_name,
+            "action": self._get_argparse_action(),
+            "default": None,
+            "required": False,
+            "help": self.description,
+            "dest": self.fq_name,
         }
 
         if self.prefix:
-            kwargs['child_action'] = self._get_argparse_action(False)
-            kwargs['separator'] = self.separator
-            kwargs['nargs'] = 0
+            kwargs["child_action"] = self._get_argparse_action(False)
+            kwargs["separator"] = self.separator
+            kwargs["nargs"] = 0
 
         return kwargs
 
@@ -722,13 +768,14 @@ class YapconfListItem(YapconfItem):
     """A YapconfItem for capture list-specific behavior"""
 
     def __init__(self, name, **kwargs):
-        kwargs['item_type'] = 'list'
+        kwargs["item_type"] = "list"
         super(YapconfListItem, self).__init__(name, **kwargs)
 
         if len(self.children) != 1:
-            raise YapconfListItemError("List Items can only have a "
-                                       "single child item. Got {0} children"
-                                       .format(len(self.children)))
+            raise YapconfListItemError(
+                "List Items can only have a "
+                "single child item. Got {0} children".format(len(self.children))
+            )
 
         self.child = list(self.children.values())[0]
 
@@ -749,10 +796,12 @@ class YapconfListItem(YapconfItem):
                 value_to_return.append(converted_value)
             return value_to_return
         except (TypeError, ValueError) as ex:
-            raise YapconfValueError('Tried to convert "{0}" to a list but '
-                                    'could not iterate over the value. '
-                                    'Invalid item found in {1}'
-                                    .format(self.name, label), ex)
+            raise YapconfValueError(
+                'Tried to convert "{0}" to a list but '
+                "could not iterate over the value. "
+                "Invalid item found in {1}".format(self.name, label),
+                ex,
+            )
 
     def add_argument(self, parser, bootstrap=False):
         """Add list-style item as an argument to the given parser.
@@ -810,16 +859,16 @@ class YapconfListItem(YapconfItem):
 
     def _get_argparse_kwargs(self, bootstrap):
         child_kwargs = self.child._get_argparse_kwargs(bootstrap)
-        child_kwargs['action'] = self._get_argparse_action()
-        child_kwargs['dest'] = self.fq_name
-        child_kwargs['default'] = None
+        child_kwargs["action"] = self._get_argparse_action()
+        child_kwargs["dest"] = self.fq_name
+        child_kwargs["default"] = None
 
         if self.prefix:
-            child_kwargs['child_action'] = self._get_argparse_action(False)
-            child_kwargs['child_const'] = not self.child.default
+            child_kwargs["child_action"] = self._get_argparse_action(False)
+            child_kwargs["child_const"] = not self.child.default
 
         if isinstance(self.child, YapconfBoolItem):
-            child_kwargs['const'] = not self.child.default
+            child_kwargs["const"] = not self.child.default
 
         return child_kwargs
 
@@ -828,16 +877,18 @@ class YapconfDictItem(YapconfItem):
     """A YapconfItem for capture dict-specific behavior"""
 
     def __init__(self, name, **kwargs):
-        kwargs['item_type'] = 'dict'
+        kwargs["item_type"] = "dict"
         super(YapconfDictItem, self).__init__(name, **kwargs)
 
         if self.choices is not None:
-            raise YapconfDictItemError('Dict items {0} cannot have choices '
-                                       'because they are not hashable.'
-                                       .format(self.name))
+            raise YapconfDictItemError(
+                "Dict items {0} cannot have choices "
+                "because they are not hashable.".format(self.name)
+            )
         if len(self.children) < 1:
-            raise YapconfDictItemError('Dict item {0} must have children'
-                                       .format(self.name))
+            raise YapconfDictItemError(
+                "Dict item {0} must have children".format(self.name)
+            )
 
     def __deepcopy__(self, memodict={}):
         kwargs = {k: v for k, v in self.__dict__.items() if k != "logger"}
@@ -871,9 +922,7 @@ class YapconfDictItem(YapconfItem):
 
     def get_config_value(self, overrides, skip_environment=False):
         converted_value = {
-            child_name: child_item.get_config_value(
-                overrides, skip_environment
-            )
+            child_name: child_item.get_config_value(overrides, skip_environment)
             for child_name, child_item in six.iteritems(self.children)
         }
         self._validate_value(converted_value)
@@ -905,8 +954,9 @@ class YapconfDictItem(YapconfItem):
             obj_copy.children = filtered_items
             return obj_copy
 
-    def migrate_config(self, current_config, config_to_migrate,
-                       always_update, update_defaults):
+    def migrate_config(
+        self, current_config, config_to_migrate, always_update, update_defaults
+    ):
 
         if self.name not in config_to_migrate:
             config_to_migrate[self.name] = {}
@@ -914,8 +964,9 @@ class YapconfDictItem(YapconfItem):
         child_config = config_to_migrate[self.name]
 
         for child_item in self.children.values():
-            child_item.migrate_config(current_config, child_config,
-                                      always_update, update_defaults)
+            child_item.migrate_config(
+                current_config, child_config, always_update, update_defaults
+            )
 
     def convert_config_value(self, value, label):
         return {

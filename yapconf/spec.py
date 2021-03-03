@@ -8,8 +8,12 @@ import six
 import yapconf
 from box import Box
 from yapconf.docs import generate_markdown_doc
-from yapconf.exceptions import (YapconfItemNotFound, YapconfLoadError,
-                                YapconfSourceError, YapconfSpecError)
+from yapconf.exceptions import (
+    YapconfItemNotFound,
+    YapconfLoadError,
+    YapconfSourceError,
+    YapconfSpecError,
+)
 from yapconf.handlers import ConfigChangeHandler
 from yapconf.items import YapconfDictItem, YapconfListItem, from_specification
 from yapconf.sources import get_source
@@ -46,39 +50,43 @@ class YapconfSpec(object):
 
     """
 
-    def __init__(self, specification, file_type='json', env_prefix=None,
-                 encoding='utf-8', separator='.'):
+    def __init__(
+        self,
+        specification,
+        file_type="json",
+        env_prefix=None,
+        encoding="utf-8",
+        separator=".",
+    ):
         self._file_type = file_type
         self._encoding = encoding
 
         if self._file_type not in yapconf.FILE_TYPES:
             raise YapconfSpecError(
-                'Unsupported file type: {0}. Supported file types are: {1}'
-                .format(self._file_type, yapconf.FILE_TYPES)
+                "Unsupported file type: {0}. Supported file types are: "
+                "{1}".format(self._file_type, yapconf.FILE_TYPES)
             )
 
         self._specification = self._load_specification(specification)
         self._env_prefix = env_prefix
         self._separator = separator
-        self._yapconf_items = from_specification(self._specification,
-                                                 self._env_prefix,
-                                                 self._separator)
+        self._yapconf_items = from_specification(
+            self._specification, self._env_prefix, self._separator
+        )
         self._logger = logging.getLogger(__name__)
         self._sources = {}
 
     def _load_specification(self, specification):
         if isinstance(specification, six.string_types):
             specification = yapconf.load_file(
-                specification,
-                file_type=self._file_type,
-                klazz=YapconfSpecError
+                specification, file_type=self._file_type, klazz=YapconfSpecError,
             )
 
         if not isinstance(specification, dict):
             raise YapconfSpecError(
-                'Specification must be a dictionary or a filename which '
-                'contains a loadable dictionary. Supported file types are {0}'
-                .format(yapconf.FILE_TYPES)
+                "Specification must be a dictionary or a filename which "
+                "contains a loadable dictionary. Supported file types are "
+                "{0}".format(yapconf.FILE_TYPES)
             )
 
         self._validate_specification(specification)
@@ -87,23 +95,27 @@ class YapconfSpec(object):
     def _validate_specification(self, specification):
         for item_name, item_info in six.iteritems(specification):
             if not isinstance(item_info, dict):
-                raise YapconfSpecError("Invalid specification. {0} is not a "
-                                       "dictionary.".format(item_name))
+                raise YapconfSpecError(
+                    "Invalid specification. {0} is not a "
+                    "dictionary.".format(item_name)
+                )
 
-            item_type = item_info.get('type', 'str')
-            nested_items = item_info.get('items', {})
-            if nested_items and item_type not in ['list', 'dict']:
-                raise YapconfSpecError("Invalid specification. {0} is a {1} "
-                                       "type item, but it has children. "
-                                       "Maybe you meant to set type to either"
-                                       "'list' or 'dict'?"
-                                       .format(item_name, item_type))
-            elif item_type in ['list', 'dict'] and not nested_items:
-                raise YapconfSpecError("Invalid specification. {0} is a {1} "
-                                       "type item, but it has no children. "
-                                       "This is not allowed."
-                                       .format(item_name, item_type))
-            elif item_type in ['list', 'dict']:
+            item_type = item_info.get("type", "str")
+            nested_items = item_info.get("items", {})
+            if nested_items and item_type not in ["list", "dict"]:
+                raise YapconfSpecError(
+                    "Invalid specification. {0} is a {1} "
+                    "type item, but it has children. "
+                    "Maybe you meant to set type to either"
+                    "'list' or 'dict'?".format(item_name, item_type)
+                )
+            elif item_type in ["list", "dict"] and not nested_items:
+                raise YapconfSpecError(
+                    "Invalid specification. {0} is a {1} "
+                    "type item, but it has no children. "
+                    "This is not allowed.".format(item_name, item_type)
+                )
+            elif item_type in ["list", "dict"]:
                 self._validate_specification(nested_items)
 
     @property
@@ -123,9 +135,7 @@ class YapconfSpec(object):
         defaults = {}
         for item in items:
             if isinstance(item, YapconfDictItem):
-                defaults[item.name] = self._get_defaults(
-                    item.children.values()
-                )
+                defaults[item.name] = self._get_defaults(item.children.values())
             else:
                 defaults[item.name] = item.default
         return defaults
@@ -139,8 +149,10 @@ class YapconfSpec(object):
                 bootstrapped items as required on the command-line.
 
         """
-        [item.add_argument(parser, bootstrap)
-         for item in self._get_items(bootstrap=False)]
+        [
+            item.add_argument(parser, bootstrap)
+            for item in self._get_items(bootstrap=False)
+        ]
 
     def add_source(self, label, source_type, **kwargs):
         """Add a source to the spec.
@@ -237,9 +249,12 @@ class YapconfSpec(object):
         for key, value in six.iteritems(new_defaults):
             item = self.get_item(key)
             if item is None:
-                raise YapconfItemNotFound("Cannot update default for {0}, "
-                                          "there is no config item by the "
-                                          "name of {1}".format(key, key), None)
+                raise YapconfItemNotFound(
+                    "Cannot update default for {0}, "
+                    "there is no config item by the "
+                    "name of {1}".format(key, key),
+                    None,
+                )
 
             item.update_default(value, respect_none)
 
@@ -263,11 +278,11 @@ class YapconfSpec(object):
             A string representation of the documentation.
 
         """
-        output_file = kwargs.get('output_file_name')
-        encoding = kwargs.get('encoding', 'utf-8')
+        output_file = kwargs.get("output_file_name")
+        encoding = kwargs.get("encoding", "utf-8")
         doc_string = generate_markdown_doc(app_name, self)
         if output_file:
-            with open(output_file, 'w', encoding=encoding) as doc_file:
+            with open(output_file, "w", encoding=encoding) as doc_file:
                 doc_file.write(doc_string)
 
         return doc_string
@@ -297,10 +312,12 @@ class YapconfSpec(object):
             if result is not None:
                 filtered_items[item_name] = result
 
-        return Box({
-            item.name: item.get_config_value(overrides) for item in
-            filtered_items.values()
-        })
+        return Box(
+            {
+                item.name: item.get_config_value(overrides)
+                for item in filtered_items.values()
+            }
+        )
 
     def load_config(self, *args, **kwargs):
         """Load a config based on the arguments passed in.
@@ -351,7 +368,7 @@ class YapconfSpec(object):
             YapconfValueError: If a possible value is found but during
                 conversion, an exception was raised.
         """
-        bootstrap = kwargs.get('bootstrap', False)
+        bootstrap = kwargs.get("bootstrap", False)
         overrides = self._generate_overrides(*args)
         config = self._generate_config_from_overrides(overrides, bootstrap)
         return Box(config)
@@ -379,7 +396,7 @@ class YapconfSpec(object):
 
         if label not in self._sources:
             raise YapconfSourceError(
-                'Cannot watch %s no source named %s' % (label, label)
+                "Cannot watch %s no source named %s" % (label, label)
             )
 
         current_config = self._sources[label].get_data()
@@ -449,9 +466,9 @@ class YapconfSpec(object):
         output_file_type = output_file_type or self._file_type
         output_file_name = output_file_name or config_file_path
 
-        current_config = self._get_config_if_exists(config_file_path,
-                                                    create,
-                                                    current_file_type)
+        current_config = self._get_config_if_exists(
+            config_file_path, create, current_file_type
+        )
 
         migrated_config = {}
 
@@ -459,19 +476,21 @@ class YapconfSpec(object):
             items = self._yapconf_items.values()
         else:
             items = [
-                item for item in self._yapconf_items.values()
-                if not item.bootstrap
+                item for item in self._yapconf_items.values() if not item.bootstrap
             ]
         for item in items:
-            item.migrate_config(current_config, migrated_config,
-                                always_update, update_defaults)
+            item.migrate_config(
+                current_config, migrated_config, always_update, update_defaults
+            )
 
         if create:
-            yapconf.dump_data(migrated_config,
-                              filename=output_file_name,
-                              file_type=output_file_type,
-                              klazz=YapconfLoadError,
-                              dump_kwargs=dump_kwargs)
+            yapconf.dump_data(
+                migrated_config,
+                filename=output_file_name,
+                file_type=output_file_type,
+                klazz=YapconfLoadError,
+                dump_kwargs=dump_kwargs,
+            )
 
         return Box(migrated_config)
 
@@ -479,26 +498,27 @@ class YapconfSpec(object):
         if not os.path.isfile(config_file_path) and create:
             return {}
         elif not os.path.isfile(config_file_path):
-            raise YapconfLoadError("Error migrating config file {0}. "
-                                   "File does not exist. If you would like "
-                                   "to create the file, you need to pass "
-                                   "the create flag.".format(config_file_path))
+            raise YapconfLoadError(
+                "Error migrating config file {0}. "
+                "File does not exist. If you would like "
+                "to create the file, you need to pass "
+                "the create flag.".format(config_file_path)
+            )
 
-        return yapconf.load_file(config_file_path,
-                                 file_type=file_type,
-                                 klazz=YapconfLoadError)
+        return yapconf.load_file(
+            config_file_path, file_type=file_type, klazz=YapconfLoadError
+        )
 
     def _get_items(self, bootstrap):
         if not bootstrap:
             return self._yapconf_items.values()
         else:
-            return [item for item in self._yapconf_items.values()
-                    if item.bootstrap]
+            return [item for item in self._yapconf_items.values() if item.bootstrap]
 
     def _generate_config_from_overrides(self, overrides, bootstrap):
         return {
-            item.name: item.get_config_value(overrides) for item in
-            self._get_items(bootstrap)
+            item.name: item.get_config_value(overrides)
+            for item in self._get_items(bootstrap)
         }
 
     def _generate_overrides(self, *args):
@@ -514,10 +534,7 @@ class YapconfSpec(object):
         # We manually generate defaults here so that it is easy to find out
         # if there are defaults for fallbacks that should be applied.
         overrides.append(
-            (
-                '__defaults__',
-                yapconf.flatten(self.defaults, separator=self._separator)
-            )
+            ("__defaults__", yapconf.flatten(self.defaults, separator=self._separator),)
         )
         return overrides
 
@@ -532,10 +549,10 @@ class YapconfSpec(object):
         if isinstance(override, tuple):
             if len(override) < 2:
                 raise YapconfLoadError(
-                    'Invalid override tuple provided. The tuple must have a '
-                    'name and value. Optionally, it can provide a third '
-                    'argument specifying the file type if it is different '
-                    'than the default file_type passed during initialization.'
+                    "Invalid override tuple provided. The tuple must have a "
+                    "name and value. Optionally, it can provide a third "
+                    "argument specifying the file type if it is different "
+                    "than the default file_type passed during initialization."
                 )
 
             label = override[0]
@@ -548,41 +565,33 @@ class YapconfSpec(object):
     def _extract_string_source(self, label, value, file_type):
         if value in self._sources:
             return self._sources[value]
-        elif value == 'ENVIRONMENT':
-            return get_source(value, 'environment')
-        elif value == 'CLI':
-            return get_source(value, 'cli', spec=self)
-        elif file_type in ['json', 'yaml']:
-            return get_source(
-                value,
-                file_type,
-                filename=value,
-                encoding=self._encoding
-            )
+        elif value == "ENVIRONMENT":
+            return get_source(value, "environment")
+        elif value == "CLI":
+            return get_source(value, "cli", spec=self)
+        elif file_type in ["json", "yaml"]:
+            return get_source(value, file_type, filename=value, encoding=self._encoding)
 
         raise YapconfLoadError(
-            'Invalid override given: %s. A string type was detected '
-            'but no valid source could be generated. This should be '
-            'a string which points to a label from the sources you added, '
+            "Invalid override given: %s. A string type was detected "
+            "but no valid source could be generated. This should be "
+            "a string which points to a label from the sources you added, "
             'the string "ENVIRONMENT" or have a file_type of "json" or "yaml"'
-            'got a (value, file_type) of: (%s %s)' %
-            (label, value, file_type)
+            "got a (value, file_type) of: (%s %s)" % (label, value, file_type)
         )
 
     def _extract_source(self, index, override):
         label, unpacked_value, file_type = self._explode_override(override)
 
         if isinstance(unpacked_value, six.string_types):
-            return self._extract_string_source(
-                label, unpacked_value, file_type
-            )
+            return self._extract_string_source(label, unpacked_value, file_type)
 
         elif isinstance(unpacked_value, dict):
-            label = label or 'dict-%d' % index
-            return get_source(label, 'dict', data=unpacked_value)
+            label = label or "dict-%d" % index
+            return get_source(label, "dict", data=unpacked_value)
 
         raise YapconfLoadError(
-            'Invalid override given: %s overrides must be one of the '
-            'following: a dictionary, a filename, a label for a source, or '
+            "Invalid override given: %s overrides must be one of the "
+            "following: a dictionary, a filename, a label for a source, or "
             '"ENVIRONMENT". Got: %s' % (label, unpacked_value)
         )

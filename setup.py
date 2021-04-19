@@ -13,7 +13,6 @@ with open("HISTORY.rst") as history_file:
 requirements = [
     "six<2",
     "python-box<4",
-    "watchdog<1",
 ]
 
 extras = {
@@ -22,6 +21,8 @@ extras = {
     "develop": ["isort", "watchdog"],
     "docs": ["sphinx", "sphinx_rtd_theme"],
     "k8s": ["kubernetes"],
+    ':python_version<"3.6"': ["watchdog<1"],
+    ':python_version>"3.6"': ["watchdog>1"],
     "test": [
         "codecov",
         "coverage",
@@ -42,7 +43,7 @@ extras = {
 
 setup(
     name="yapconf",
-    version="0.3.7",
+    version="1.0.0",
     description="Yet Another Python Configuration",
     long_description=readme + "\n\n" + history,
     author="Logan Asher Jones",
@@ -66,6 +67,8 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     test_suite="tests",
     tests_require=extras["test"],

@@ -54,7 +54,7 @@ from yapconf.spec import YapconfSpec  # noqa: E402
 
 __author__ = """Logan Asher Jones"""
 __email__ = "loganasherjones@gmail.com"
-__version__ = "0.3.7"
+__version__ = "1.0.0"
 
 
 FILE_TYPES = {

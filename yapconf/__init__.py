@@ -20,6 +20,11 @@ yaml_support = True
 etcd_support = True
 kubernetes_support = True
 redis_support = True
+json_encode_support = True
+if sys.version_info.major > 3 or (
+    sys.version_info.major == 3 and sys.version_info.minor >= 9
+):
+    json_encode_support = False
 
 try:
     # We set safe_load, to be load because otherwise ruamel.yaml

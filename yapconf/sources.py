@@ -5,6 +5,7 @@ import json
 import os
 import threading
 import time
+import warnings
 from argparse import ArgumentParser
 
 import six
@@ -245,7 +246,13 @@ class JsonConfigSource(ConfigSource):
         self.data = data
         self.filename = filename
         self._load_kwargs = kwargs
-        if "encoding" not in self._load_kwargs:
+
+        if "encoding" in self._load_kwargs and not yapconf.json_encode_support:
+            warnings.warn("encoding passed to json source config but 3.9 "
+                          "dropped support for encoding. This will be ignored.")
+            del self._load_kwargs["encoding"]
+
+        if "encoding" not in self._load_kwargs and yapconf.json_encode_support:
             self._load_kwargs["encoding"] = "utf-8"
         super(JsonConfigSource, self).__init__(label)
 

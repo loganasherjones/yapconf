@@ -34,8 +34,8 @@ try:
     # ruamel.yaml is installed.
     import ruamel.yaml as yaml
 
+    # ruamel.yaml depricated support for safe_load in 0.17.0
     if packaging.version.parse(yaml.__version__) < packaging.version.parse("0.18.0"):
-        # ruamel.yaml depricated support for safe_load in 0.17.0
         yaml.load = yaml.safe_load
     else:
         from ruamel.yaml import YAML

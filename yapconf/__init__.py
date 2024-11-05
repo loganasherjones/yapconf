@@ -4,6 +4,7 @@ import json
 import re
 import sys
 
+import packaging.version
 import six
 from box import Box
 
@@ -12,8 +13,8 @@ if six.PY3:
 
     unicode = str
 else:
-    from io import open
     from collections import MutableMapping
+    from io import open
 
 # Setup feature flags for use throughout the package.
 yaml_support = True
@@ -33,7 +34,15 @@ try:
     # ruamel.yaml is installed.
     import ruamel.yaml as yaml
 
-    yaml.load = yaml.safe_load
+    if packaging.version.parse(yaml.__version__) < packaging.version.parse("0.18.0"):
+        # ruamel.yaml depricated support for safe_load in 0.17.0
+        yaml.load = yaml.safe_load
+    else:
+        from ruamel.yaml import YAML
+
+        yaml = YAML(typ="safe", pure=True)
+
+
 except ImportError:
     try:
         import yaml
@@ -182,7 +191,11 @@ def _dump(data, stream, file_type, **kwargs):
 
 
 def load_file(
-    filename, file_type="json", klazz=YapconfError, open_kwargs=None, load_kwargs=None,
+    filename,
+    file_type="json",
+    klazz=YapconfError,
+    open_kwargs=None,
+    load_kwargs=None,
 ):
     """Load a file with the given file type.
 
@@ -212,7 +225,7 @@ def load_file(
         if str(file_type).lower() == "json":
             data = json.load(conf_file, **load_kwargs)
         elif str(file_type).lower() == "yaml":
-            data = yaml.safe_load(conf_file.read())
+            data = yaml.load(conf_file.read())
         else:
             raise NotImplementedError(
                 "Someone forgot to implement how to load a %s file_type." % file_type

@@ -2,6 +2,10 @@
 History
 =======
 
+0.4.0 ()
+------------------
+* Added support for `ruamel.yaml>0.18`
+
 0.3.7 (2019-12-02)
 ------------------
 * Fixed broken test
